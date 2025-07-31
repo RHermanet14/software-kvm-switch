@@ -8,10 +8,10 @@ Desired Features:
 - Other stuff as I come up with it
 
 Client:
-- Recieve inputs and use them
+- Send inputs to server(s) depending on which end of screen mouse is on
 
 Server:
-- Send inputs to client(s) depending on which end of screen mouse is on
+- Recieve inputs and use them
 
 UI:
 - Setting IP / Port
