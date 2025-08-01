@@ -8,6 +8,7 @@ Desired Features:
 - Other stuff as I come up with it
 
 Client:
+- Uses .NET Secret Manager (for now) to store IP
 - Send inputs to server(s) depending on which end of screen mouse is on
 
 Server:
