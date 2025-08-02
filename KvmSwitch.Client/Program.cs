@@ -3,6 +3,7 @@ using Microsoft.Extensions.Configuration;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using Shared;
 
 namespace Client {
 
@@ -13,6 +14,10 @@ static void Main(string[] args)
     .AddUserSecrets<Program>()
     .Build();
     string ip = config["IP"] ?? throw new InvalidOperationException("Missing IP secret");
+    var (width, height) = DisplayEvent.GetScreenDimensions();
+    Console.WriteLine($"Screen dimesntions: Width={width}, Height={height}");
+    var (x, y) = MouseEvent.GetCursorPosition();
+    Console.WriteLine($"Cursor is at: X={x}, Y={y}");
     ExecuteClient(ip);
 }
 static void ExecuteClient(string ip)
