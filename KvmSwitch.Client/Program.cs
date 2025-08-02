@@ -15,7 +15,7 @@ static void Main(string[] args)
     .Build();
     string ip = config["IP"] ?? throw new InvalidOperationException("Missing IP secret");
     var (width, height) = DisplayEvent.GetScreenDimensions();
-    Console.WriteLine($"Screen dimesntions: Width={width}, Height={height}");
+    Console.WriteLine($"Screen dimensions: Width={width}, Height={height}");
     var (x, y) = MouseEvent.GetCursorPosition();
     Console.WriteLine($"Cursor is at: X={x}, Y={y}");
     ExecuteClient(ip);
