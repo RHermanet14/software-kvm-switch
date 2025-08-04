@@ -213,6 +213,7 @@ namespace services
                     VelocityY = VelocityY,
                     AccelerationX = AccelerationX,
                     AccelerationY = AccelerationY,
+                    TimeDelta = timeDelta,
                     Timestamp = currentTime
                 });
             }
@@ -225,7 +226,6 @@ namespace services
             RawDeltaX = RawDeltaY = 0;
             _lastVelocityX = _lastVelocityY = 0f;
             _lastDeltaX = _lastDeltaY = 0;
-
             for (int i = 0; i < _smoothingFactor; i++)
             {
                 _recentVelocityX[i] = 0f;
@@ -271,6 +271,7 @@ namespace services
         public float VelocityY { get; set; }
         public float AccelerationX { get; set; }
         public float AccelerationY { get; set; }
+        public double TimeDelta { get; set; }
         public DateTime Timestamp { get; set; }
     }
 }

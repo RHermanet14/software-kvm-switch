@@ -29,6 +29,7 @@ namespace Client {
         private void OnMouseMovement(object? sender, MouseMovementEventArgs e)
         {
             Console.WriteLine($"Velocity: X={e.VelocityX:F1} px/s, Y={e.VelocityY:F1} px/s");
+            Console.WriteLine($"Time = {e.TimeDelta}");
         }
     }
 
