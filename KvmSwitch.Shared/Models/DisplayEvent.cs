@@ -1,15 +1,31 @@
 using System;
-using System.Net.Http.Headers;
-using System.Reflection.Metadata;
 using System.Runtime.InteropServices;
-using System.Security.Policy;
-using System.Windows.Forms;
-using System.Windows.Forms.VisualStyles;
 namespace Shared
 {
-
-    public class DisplayEvent : Form
+    public enum Direction {Up, Down, Left, Right}
+    public struct Dir
     {
+        public Direction Side { get; }
+        public Dir(Direction side) { Side = side; }
+        public static Dir operator !(Dir d)
+        {
+            return d.Side switch
+            {
+                Direction.Up => new Dir(Direction.Down),
+                Direction.Down => new Dir(Direction.Up),
+                Direction.Left => new Dir(Direction.Right),
+                Direction.Right => new Dir(Direction.Left),
+                _ => throw new ArgumentOutOfRangeException()
+            };
+        }
+        public override string ToString() => Side.ToString();
+        public static implicit operator Dir(Direction d) => new Dir(d);
+        public static implicit operator Direction(Dir d) => d.Side;
+    }
+    public class DisplayEvent
+    {
+
+
         private static int margin { get; set; } = 10;
         public static (int width, int height) GetScreenDimensions()
         {

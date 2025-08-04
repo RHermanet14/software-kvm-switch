@@ -2,6 +2,7 @@
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using Shared;
 
 namespace Server {
 
@@ -14,6 +15,8 @@ static void Main(string[] args)
 
 public static void ExecuteServer()
 {
+    var (width, height) = DisplayEvent.GetScreenDimensions();
+    Console.WriteLine($"Screen dimensions: Width={width}, Height={height}");
     IPAddress ipAddr = IPAddress.Any;
     IPEndPoint localEndPoint = new IPEndPoint(ipAddr, 11111);
     Socket listener = new Socket(ipAddr.AddressFamily, SocketType.Stream, ProtocolType.Tcp);

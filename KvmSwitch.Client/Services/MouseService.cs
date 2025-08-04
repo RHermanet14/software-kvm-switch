@@ -1,14 +1,40 @@
 using System;
-using System.Reflection.Metadata;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
 namespace services
 {
-    public class MouseService : NativeWindow
+    public class MouseService : NativeWindow, IDisposable
     {
+        public event EventHandler<MouseMovementEventArgs>? MouseMovement;
+
+        #region Private Variables
         private const uint RID_INPUT = 0x10000003;
-        private static bool _registered = false;
+        private const uint RIM_TYPEMOUSE = 0;
+        private const uint RIDEV_REMOVE = 0x00000001;
+        private const uint RIDEV_INPUTSINK = 0x00000100;
+        private const int WM_INPUT = 0x00FF;
+        private bool _registered = false;
+        private bool _disposed = false;
+        private long _lastDeltaX = 0;
+        private long _lastDeltaY = 0;
         private DateTime _lastUpdateTime = DateTime.Now;
+        private float _lastVelocityX = 0f;
+        private float _lastVelocityY = 0f;
+        private readonly int _smoothingFactor = 3;
+        private readonly float[] _recentVelocityX;
+        private readonly float[] _recentVelocityY;
+        private int _velocityIndex = 0;
+        #endregion
+
+        #region Public Properties
+        public float VelocityX { get; private set; } = 0f;
+        public float VelocityY { get; private set; } = 0f;
+        public float AccelerationX { get; private set; } = 0f;
+        public float AccelerationY { get; private set; } = 0f;
+        public long RawDeltaX { get; private set; } = 0;
+        public long RawDeltaY { get; private set; } = 0;
+
+        #endregion
         #region Structs
 
         [StructLayout(LayoutKind.Sequential)]
@@ -53,13 +79,31 @@ namespace services
         private static extern bool RegisterRawInputDevices(RAWINPUTDEVICE[] pRawInputDevices, uint uiNumDevices, uint cbSize);
 
         [DllImport("user32.dll")]
-        private static extern uint GetRawInputData( // For WndProc
+        private static extern int GetRawInputData( // For WndProc
             IntPtr hRawInput,
             uint uiCommand,
             IntPtr pData,
             ref uint pcbSize,
             uint cbSizeHeader
         );
+
+        public MouseService()
+        {
+            _recentVelocityX = new float[_smoothingFactor];
+            _recentVelocityY = new float[_smoothingFactor];
+
+            // Create a hidden window for receiving raw input messages
+            CreateHandle(new CreateParams
+            {
+                Caption = "RawMouseTracker",
+                ClassName = "STATIC",
+                Style = 0,
+                ExStyle = 0,
+                Height = 0,
+                Width = 0,
+                Parent = IntPtr.Zero
+            });
+        }
 
         public bool StartTracking()
         {
@@ -68,36 +112,44 @@ namespace services
             RAWINPUTDEVICE[] devices = new RAWINPUTDEVICE[1];
             devices[0].usUsagePage = 0x01;
             devices[0].usUsage = 0x02;
-            devices[0].dwFlags = 0;
-            devices[0].hwndTarget = IntPtr.Zero; // Might need to add a handle
+            devices[0].dwFlags = RIDEV_INPUTSINK;
+            devices[0].hwndTarget = Handle; // Might need to add a handle
             if (!RegisterRawInputDevices(devices, 1, (uint)Marshal.SizeOf(typeof(RAWINPUTDEVICE))))
+            {
+                Console.WriteLine("Failed to register device");
                 return false;
+            }
             _registered = true;
             return true;
         }
 
         protected override void WndProc(ref Message m)
         {
-            const int WM_INPUT = 0x00FF;
             if (m.Msg == WM_INPUT && _registered)
             {
                 uint size = 0;
-                GetRawInputData(m.LParam, RID_INPUT, IntPtr.Zero, ref size, (uint)Marshal.SizeOf(typeof(RAWINPUTHEADER)));
+                if (GetRawInputData(m.LParam, RID_INPUT, IntPtr.Zero, ref size, (uint)Marshal.SizeOf(typeof(RAWINPUTHEADER))) == -1)
+                {
+                    Console.WriteLine("GetRawInputData failed");
+                    base.WndProc(ref m);
+                    return;
+                }
                 if (size <= 0)
                 {
+                    Console.WriteLine("Size not allocated");
                     base.WndProc(ref m);
                     return;
                 }
                 IntPtr buffer = Marshal.AllocHGlobal((int)size);
                 try
                 {
-                    uint actualSize = GetRawInputData(m.LParam, RID_INPUT, buffer, ref size, (uint)Marshal.SizeOf(typeof(RAWINPUTHEADER)));
+                    int actualSize = GetRawInputData(m.LParam, RID_INPUT, buffer, ref size, (uint)Marshal.SizeOf(typeof(RAWINPUTHEADER)));
                     if (actualSize == size)
                     {
                         RAWINPUT rawInput = Marshal.PtrToStructure<RAWINPUT>(buffer);
-                        if (rawInput.header.dwType == 0) // RIM_TYPEMOUSE
+                        if (rawInput.header.dwType == RIM_TYPEMOUSE)
                         {
-                            //UpdateMovementData(rawInput.mouse.lLastX, rawInput.mouse.lLastY);
+                            UpdateMovementData(rawInput.mouse.lLastX, rawInput.mouse.lLastY);
                         }
                     }
                 }
@@ -108,10 +160,10 @@ namespace services
             }
             base.WndProc(ref m);
         }
-        
-/*
-        private void UpdateMovementData(int deltaX, int deltaY)
+
+        private void UpdateMovementData(long deltaX, long deltaY)
         {
+            Console.WriteLine($"Raw movement: deltaX={deltaX}, deltaY={deltaY}");
             DateTime currentTime = DateTime.Now;
             double timeDelta = (currentTime - _lastUpdateTime).TotalMilliseconds;
 
@@ -173,7 +225,7 @@ namespace services
             RawDeltaX = RawDeltaY = 0;
             _lastVelocityX = _lastVelocityY = 0f;
             _lastDeltaX = _lastDeltaY = 0;
-            
+
             for (int i = 0; i < _smoothingFactor; i++)
             {
                 _recentVelocityX[i] = 0f;
@@ -181,9 +233,28 @@ namespace services
             }
             _velocityIndex = 0;
         }
+        public bool StopTracking()
+        {
+            if (!_registered) return true;
 
+            RAWINPUTDEVICE[] devices = new RAWINPUTDEVICE[1];
+            devices[0].usUsagePage = 0x01;
+            devices[0].usUsage = 0x02;
+            devices[0].dwFlags = RIDEV_REMOVE;
+            devices[0].hwndTarget = IntPtr.Zero;
+
+            if (!RegisterRawInputDevices(devices, 1, (uint)Marshal.SizeOf(typeof(RAWINPUTDEVICE))))
+            {
+                Console.WriteLine("Error: Unsuccessfully unregistered device");
+                return false;
+            }
+            _registered = false;
+            ResetValues();
+            return true;
+        }
         public void Dispose()
         {
+            Console.WriteLine("Cleaning up device...");
             if (!_disposed)
             {
                 StopTracking();
@@ -192,7 +263,15 @@ namespace services
             }
         }
     }
-*/
+    public class MouseMovementEventArgs : EventArgs
+    {
+        public long DeltaX { get; set; }
+        public long DeltaY { get; set; }
+        public float VelocityX { get; set; }
+        public float VelocityY { get; set; }
+        public float AccelerationX { get; set; }
+        public float AccelerationY { get; set; }
+        public DateTime Timestamp { get; set; }
     }
 }
 

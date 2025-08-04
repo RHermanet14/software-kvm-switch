@@ -10,9 +10,12 @@ Desired Features:
 Client:
 - Uses .NET Secret Manager (for now) to store IP
 - Send inputs to server(s) depending on which end of screen mouse is on
+- Uses RawInputDevice to get mouse (and eventually keyboard) inputs
+- Send this pair (of floats) through a TCP socket
 
 Server:
 - Recieve inputs and use them
+- Interpret data recieved through sockets as real inputs
 
 UI:
 - Setting IP / Port
