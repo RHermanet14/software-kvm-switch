@@ -61,10 +61,10 @@ namespace services
             public ushort usFlags;
             public ushort usButtonFlags;
             public ushort usButtonData;
-            public ulong ulRawButtons;
-            public long lLastX;
-            public long lLastY;
-            public ulong ulExtraInformation;
+            public uint ulRawButtons; // Changed from ulong to uint
+            public int lLastX;  // Changed from long to int
+            public int lLastY;  // Changed from long to int
+            public uint ulExtraInformation; // Changed from ulong to uint
         }
 
         [StructLayout(LayoutKind.Sequential)]
@@ -113,7 +113,7 @@ namespace services
             devices[0].usUsagePage = 0x01;
             devices[0].usUsage = 0x02;
             devices[0].dwFlags = RIDEV_INPUTSINK;
-            devices[0].hwndTarget = Handle; // Might need to add a handle
+            devices[0].hwndTarget = Handle;
             if (!RegisterRawInputDevices(devices, 1, (uint)Marshal.SizeOf(typeof(RAWINPUTDEVICE))))
             {
                 Console.WriteLine("Failed to register device");
@@ -146,10 +146,19 @@ namespace services
                     int actualSize = GetRawInputData(m.LParam, RID_INPUT, buffer, ref size, (uint)Marshal.SizeOf(typeof(RAWINPUTHEADER)));
                     if (actualSize == size)
                     {
-                        RAWINPUT rawInput = Marshal.PtrToStructure<RAWINPUT>(buffer);
-                        if (rawInput.header.dwType == RIM_TYPEMOUSE)
+                        // Read the header first
+                        RAWINPUTHEADER header = Marshal.PtrToStructure<RAWINPUTHEADER>(buffer);
+                        
+                        if (header.dwType == RIM_TYPEMOUSE)
                         {
-                            UpdateMovementData(rawInput.mouse.lLastX, rawInput.mouse.lLastY);
+                            // Calculate offset to mouse data (after header)
+                            int headerSize = Marshal.SizeOf<RAWINPUTHEADER>();
+                            IntPtr mouseDataPtr = IntPtr.Add(buffer, headerSize);
+                            
+                            // Read mouse data directly
+                            RAWMOUSE mouseData = Marshal.PtrToStructure<RAWMOUSE>(mouseDataPtr);
+                            
+                            UpdateMovementData(mouseData.lLastX, mouseData.lLastY);
                         }
                     }
                 }
@@ -163,7 +172,10 @@ namespace services
 
         private void UpdateMovementData(long deltaX, long deltaY)
         {
-            Console.WriteLine($"Raw movement: deltaX={deltaX}, deltaY={deltaY}");
+            // Filter out zero movement to reduce noise
+            if (deltaX == 0 && deltaY == 0)
+                return;
+
             DateTime currentTime = DateTime.Now;
             double timeDelta = (currentTime - _lastUpdateTime).TotalMilliseconds;
 
@@ -180,6 +192,7 @@ namespace services
                 // Apply smoothing to velocity
                 _recentVelocityX[_velocityIndex] = currentVelocityX;
                 _recentVelocityY[_velocityIndex] = currentVelocityY;
+                
                 _velocityIndex = (_velocityIndex + 1) % _smoothingFactor;
 
                 // Calculate smoothed velocity
@@ -213,7 +226,7 @@ namespace services
                     VelocityY = VelocityY,
                     AccelerationX = AccelerationX,
                     AccelerationY = AccelerationY,
-                    TimeDelta = timeDelta,
+                    TimeDelta = timeDelta / 1000,
                     Timestamp = currentTime
                 });
             }
@@ -226,6 +239,7 @@ namespace services
             RawDeltaX = RawDeltaY = 0;
             _lastVelocityX = _lastVelocityY = 0f;
             _lastDeltaX = _lastDeltaY = 0;
+
             for (int i = 0; i < _smoothingFactor; i++)
             {
                 _recentVelocityX[i] = 0f;
@@ -243,18 +257,19 @@ namespace services
             devices[0].dwFlags = RIDEV_REMOVE;
             devices[0].hwndTarget = IntPtr.Zero;
 
-            if (!RegisterRawInputDevices(devices, 1, (uint)Marshal.SizeOf(typeof(RAWINPUTDEVICE))))
+            bool success = RegisterRawInputDevices(devices, 1, (uint)Marshal.SizeOf(typeof(RAWINPUTDEVICE)));
+            
+            if (success)
             {
-                Console.WriteLine("Error: Unsuccessfully unregistered device");
-                return false;
+                _registered = false;
+                ResetValues();
             }
-            _registered = false;
-            ResetValues();
-            return true;
+
+            return success;
         }
         public void Dispose()
         {
-            Console.WriteLine("Cleaning up device...");
+            Console.WriteLine("Successfully entered dispose function");
             if (!_disposed)
             {
                 StopTracking();
@@ -275,4 +290,3 @@ namespace services
         public DateTime Timestamp { get; set; }
     }
 }
-

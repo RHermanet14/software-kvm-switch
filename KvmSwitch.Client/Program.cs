@@ -11,10 +11,12 @@ namespace Client {
 
     public class MouseTrackingContext : ApplicationContext
     {
+        private static float x = MouseEvent.GetX();
+        private static float y = MouseEvent.GetY();
         private MouseService? mouseTracker;
         public MouseTrackingContext()
         {
-            Console.CancelKeyPress += OnCancelKeyPress;
+            Console.CancelKeyPress += OnCancelKeyPress; // Append custom function to keyboard interrupt
             mouseTracker = new MouseService();
             mouseTracker.MouseMovement += OnMouseMovement;
             if (!mouseTracker.StartTracking())
@@ -28,28 +30,26 @@ namespace Client {
         }
         private void OnMouseMovement(object? sender, MouseMovementEventArgs e)
         {
-            Console.WriteLine($"Velocity: X={e.VelocityX:F1} px/s, Y={e.VelocityY:F1} px/s");
-            Console.WriteLine($"Time = {e.TimeDelta}");
+            (x, y) = EstimateVelocity(x, y, e.VelocityX, e.VelocityY, e.TimeDelta);
+            Console.WriteLine($"Estimated cursor position: X={x:F1}, Y={y:F1}");
+            Console.WriteLine($"Actual cursor position: X={MouseEvent.GetX()}, Y={MouseEvent.GetY()}");
         }
-    }
-
-    class Program
-    {
-        [STAThread]
-        static void Main(string[] args)
+        private (float, float) EstimateVelocity(float x, float y, float dx, float dy, double dt)
         {
-            Dir dir = Direction.Left;
-            var config = new ConfigurationBuilder()
-            .AddUserSecrets<Program>()
-            .Build();
-            string ip = config["IP"] ?? throw new InvalidOperationException("Missing IP secret");
+            x += dx * (float)dt;
+            y += dy * (float)dt;
+            /*
             var (width, height) = DisplayEvent.GetScreenDimensions();
-            Console.WriteLine($"Screen dimensions: Width={width}, Height={height}");
-            var (x, y) = MouseEvent.GetCursorPosition();
-            Console.WriteLine($"Cursor is at: X={x}, Y={y}");
-            Console.WriteLine($"Socket connects the {dir} side of the client to the {!dir} side of the server");
-            Application.Run(new MouseTrackingContext());      
-            //ExecuteClient(ip);
+            if (x > width)
+                x = width;
+            if (x < 0)
+                x = 0;
+            if (y > height)
+                y = height;
+            if (y < 0)
+                y = 0;
+            */
+            return (x, y);
         }
         static void ExecuteClient(string ip)
         {
@@ -89,5 +89,26 @@ namespace Client {
                 Console.WriteLine(e.ToString());
             }
         }
+
+    }
+
+    class Program
+    {
+        [STAThread]
+        static void Main(string[] args)
+        {
+            Dir dir = Direction.Left;
+            var config = new ConfigurationBuilder()
+            .AddUserSecrets<Program>()
+            .Build();
+            string ip = config["IP"] ?? throw new InvalidOperationException("Missing IP secret");
+            var (width, height) = DisplayEvent.GetScreenDimensions();
+            Console.WriteLine($"Screen dimensions: Width={width}, Height={height}");
+            
+            Console.WriteLine($"Socket connects the {dir} side of the client to the {!dir} side of the server");
+            Application.Run(new MouseTrackingContext());      
+            //ExecuteClient(ip);
+        }
+        
     }
 }

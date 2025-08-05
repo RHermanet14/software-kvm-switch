@@ -19,5 +19,16 @@ namespace Shared
             if (GetCursorPos(out POINT point)) return (point.X, point.Y);
             throw new InvalidOperationException("Failed to retrieve cursor position.");
         }
+        public static int GetX()
+        {
+            if (GetCursorPos(out POINT point)) return point.X;
+            throw new InvalidOperationException("Failed to retrieve cursor position.");
+        }
+        public static int GetY()
+        {
+            if (GetCursorPos(out POINT point)) return point.Y;
+            throw new InvalidOperationException("Failed to retrieve cursor position.");
+        }
+
     }
 }
