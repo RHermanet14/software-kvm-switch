@@ -7,7 +7,7 @@ using Shared;
 
 public class NetworkService
 {
-    private Socket _listener;
+    private Socket? _listener;
     private const int Port = 11111;
     private const int BufferSize = 1024;
 
@@ -54,8 +54,8 @@ public class NetworkService
             Console.WriteLine($"Received JSON: {jsonString}");
 
             // public class Message { public string Content { get; set; } }
-            Direction dir = JsonSerializer.Deserialize<Direction>(jsonString);
-            Console.WriteLine($"Deserialized Content: {dir}");
+            Dir dir = JsonSerializer.Deserialize<Dir>(jsonString);
+            Console.WriteLine($"Deserialized Content: {dir.Side}");
         }
         catch (Exception ex)
         {

@@ -1,16 +1,9 @@
 namespace Shared
 {
-    //[Serializable]
-    //public struct InitialConnection
-    //{
-        //Dir direction;
-    //}
-
-    [Serializable]
-    public struct MouseData
+    public class MouseData
     {
-        int x;
-        int y;
+        public int x;
+        public int y;
         //CLICKTYPE click;
     }
 }

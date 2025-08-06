@@ -15,6 +15,7 @@ namespace Server {
             var (width, height) = DisplayEvent.GetScreenDimensions();
             Console.WriteLine($"Screen dimensions: Width={width}, Height={height}");
             NetworkService network = new NetworkService();
+            network.StartListening();
         }
     }
 
