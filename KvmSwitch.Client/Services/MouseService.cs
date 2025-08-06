@@ -203,8 +203,8 @@ namespace services
                     smoothedVelocityX += _recentVelocityX[i];
                     smoothedVelocityY += _recentVelocityY[i];
                 }
-                VelocityX = smoothedVelocityX / _smoothingFactor;
-                VelocityY = smoothedVelocityY / _smoothingFactor;
+                VelocityX = currentVelocityX; //smoothedVelocityX / _smoothingFactor;
+                VelocityY = currentVelocityY; //smoothedVelocityY / _smoothingFactor;
 
                 // Calculate acceleration (change in velocity per second)
                 AccelerationX = (float)((VelocityX - _lastVelocityX) / (timeDelta / 1000.0));

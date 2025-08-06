@@ -6,16 +6,24 @@ using System.Text;
 using Shared;
 using services;
 using System.Windows.Forms;
+using Microsoft.VisualBasic.Devices;
 
 namespace Client {
-
     public class MouseTrackingContext : ApplicationContext
     {
-        private static float x = MouseEvent.GetX();
-        private static float y = MouseEvent.GetY();
+        private static int x = MouseEvent.GetX();
+        private static int y = MouseEvent.GetY();
         private MouseService? mouseTracker;
-        public MouseTrackingContext()
+        private NetworkService? network;
+        public MouseTrackingContext(string ip, Dir dir)
         {
+            network = new NetworkService(ip);
+
+            if (!network.Connect(!dir))
+            {
+                ExitThread();
+                Environment.Exit(0);
+            }
             Console.CancelKeyPress += OnCancelKeyPress; // Append custom function to keyboard interrupt
             mouseTracker = new MouseService();
             mouseTracker.MouseMovement += OnMouseMovement;
@@ -26,18 +34,21 @@ namespace Client {
         {
             e.Cancel = true; // prevent immediate termination
             mouseTracker?.Dispose();
+            if (network != null)
+                network.Disconnect();
             ExitThread();
         }
         private void OnMouseMovement(object? sender, MouseMovementEventArgs e)
         {
-            (x, y) = EstimateVelocity(x, y, e.VelocityX, e.VelocityY, e.TimeDelta);
+            EstimateVelocity(e.VelocityX, e.VelocityY, e.TimeDelta);
+            //SendCoords(x, y);
             Console.WriteLine($"Estimated cursor position: X={x:F1}, Y={y:F1}");
             Console.WriteLine($"Actual cursor position: X={MouseEvent.GetX()}, Y={MouseEvent.GetY()}");
         }
-        private (float, float) EstimateVelocity(float x, float y, float dx, float dy, double dt)
+        private void EstimateVelocity(float dx, float dy, double dt)
         {
-            x += dx * (float)dt;
-            y += dy * (float)dt;
+            x += (int)(dx * dt);
+            y += (int)(dy * dt);
             /*
             var (width, height) = DisplayEvent.GetScreenDimensions();
             if (x > width)
@@ -49,47 +60,7 @@ namespace Client {
             if (y < 0)
                 y = 0;
             */
-            return (x, y);
         }
-        static void ExecuteClient(string ip)
-        {
-            try
-            {
-                IPHostEntry ipHost = Dns.GetHostEntry(Dns.GetHostName());
-                IPAddress ipAddr = IPAddress.Parse(ip);
-                IPEndPoint remoteEndPoint = new IPEndPoint(ipAddr, 11111);
-                Socket sender = new Socket(ipAddr.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
-                try
-                {
-                    sender.Connect(remoteEndPoint);
-                    Console.WriteLine("Socket connected to -> {0} ", sender.RemoteEndPoint?.ToString() ?? "Unknown");
-                    byte[] messageSent = Encoding.ASCII.GetBytes("Test Client<EOF>");
-                    int byteSent = sender.Send(messageSent);
-                    byte[] messageReceived = new byte[1024];
-                    int byteRecv = sender.Receive(messageReceived);
-                    Console.WriteLine("Message from Server -> {0}", Encoding.ASCII.GetString(messageReceived, 0, byteRecv));
-                    sender.Shutdown(SocketShutdown.Both);
-                    sender.Close();
-                }
-                catch (ArgumentNullException ane)
-                {
-                    Console.WriteLine("ArgumentNullException : {0}", ane.ToString());
-                }
-                catch (SocketException se)
-                {
-                    Console.WriteLine("SocketException : {0}", se.ToString());
-                }
-                catch (Exception e)
-                {
-                    Console.WriteLine("Unexpected exception : {0}", e.ToString());
-                }
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e.ToString());
-            }
-        }
-
     }
 
     class Program
@@ -106,7 +77,7 @@ namespace Client {
             Console.WriteLine($"Screen dimensions: Width={width}, Height={height}");
             
             Console.WriteLine($"Socket connects the {dir} side of the client to the {!dir} side of the server");
-            Application.Run(new MouseTrackingContext());      
+            Application.Run(new MouseTrackingContext(ip, dir));      
             //ExecuteClient(ip);
         }
         
