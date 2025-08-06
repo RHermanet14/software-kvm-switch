@@ -18,7 +18,7 @@ namespace Shared
             return Encoding.UTF8.GetBytes(JsonSerializer.Serialize(s));
         }
 
-        public bool Connect(Dir direction)
+        public bool Connect(Direction direction)
         {
             try
             {
@@ -27,8 +27,6 @@ namespace Shared
                 IPEndPoint remoteEndPoint = new IPEndPoint(ipAddr, 11111);
                 clientSocket = new Socket(ipAddr.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
                 clientSocket.Connect(remoteEndPoint);
-                Console.WriteLine("Socket connected to -> {0} ", clientSocket.RemoteEndPoint?.ToString() ?? "Unknown");
-                Console.WriteLine($"{JsonSerializer.Serialize(direction)}");
                 byte[] messageSent = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(direction));
                 int byteSent = clientSocket.Send(messageSent);
                 return true;
