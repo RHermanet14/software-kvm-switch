@@ -1,7 +1,6 @@
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
-using System.Threading.Tasks;
 using System.Text.Json;
 using Shared;
 
@@ -26,7 +25,6 @@ public class NetworkService
             while (true)
             {
                 Socket handler = _listener.Accept(); // Blocks until a client connects
-                Console.WriteLine($"Client connected from {handler.RemoteEndPoint}");
                 Task.Run(() => HandleClient(handler)); // Handle client on a separate thread
             }
         }
@@ -51,11 +49,9 @@ public class NetworkService
             } while (handler.Available > 0); // Continue reading if more data is available
 
             string jsonString = sb.ToString();
-            Console.WriteLine($"Received JSON: {jsonString}");
 
-            // public class Message { public string Content { get; set; } }
-            Dir dir = JsonSerializer.Deserialize<Dir>(jsonString);
-            Console.WriteLine($"Deserialized Content: {dir.Side}");
+            Direction dir = JsonSerializer.Deserialize<Direction>(jsonString);
+            Console.WriteLine($"Direction that screen will connect from: {dir}");
         }
         catch (Exception ex)
         {
