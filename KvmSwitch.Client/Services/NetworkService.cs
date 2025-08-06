@@ -28,7 +28,8 @@ namespace Shared
                 clientSocket = new Socket(ipAddr.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
                 clientSocket.Connect(remoteEndPoint);
                 Console.WriteLine("Socket connected to -> {0} ", clientSocket.RemoteEndPoint?.ToString() ?? "Unknown");
-                byte[] messageSent = Encoding.ASCII.GetBytes(JsonSerializer.Serialize(direction));
+                Console.WriteLine($"{JsonSerializer.Serialize(direction)}");
+                byte[] messageSent = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(direction));
                 int byteSent = clientSocket.Send(messageSent);
                 return true;
             }
