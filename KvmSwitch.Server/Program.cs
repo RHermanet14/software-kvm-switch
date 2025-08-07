@@ -16,6 +16,7 @@ namespace Server {
             var (width, height) = DisplayEvent.GetScreenDimensions();
             Console.WriteLine($"Screen dimensions: Width={width}, Height={height}");
             //MouseService m = new MouseService();
+            Console.WriteLine($"Initial value of edge: {DisplayEvent.edge}");
             NetworkService network = new NetworkService();
             network.StartListening();
             Console.WriteLine($"The server direction is: {DisplayEvent.edge}");

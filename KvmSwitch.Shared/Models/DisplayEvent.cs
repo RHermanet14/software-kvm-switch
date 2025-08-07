@@ -2,7 +2,7 @@ using System;
 using System.Runtime.InteropServices;
 namespace Shared
 {
-    public enum Direction {Up, Down, Left, Right}
+    public enum Direction {None = -1, Up, Down, Left, Right}
     public struct Dir
     {
         public Direction Side { get; }
@@ -26,7 +26,7 @@ namespace Shared
     {
         private static int width { get; set; } = -1;
         private static int height { get; set; } = -1;
-        public static Direction edge { get; set; }
+        public static Direction edge { get; set; } = Direction.None;
         public static (int width, int height) GetScreenDimensions()
         {
             if (width != -1 && height != -1)
