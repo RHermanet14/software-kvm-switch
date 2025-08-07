@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Text.Json;
+using System.Threading.Tasks;
 using services;
 using Shared;
 
@@ -11,7 +12,7 @@ public class NetworkService
     private const int Port = 11111;
     private const int BufferSize = 1024;
 
-    public void StartListening()
+    public async Task StartListening()
     {
         IPAddress ip = IPAddress.Any; // Listen on all available network interfaces
         IPEndPoint localEndPoint = new IPEndPoint(ip, Port);
@@ -22,12 +23,8 @@ public class NetworkService
         {
             _listener.Bind(localEndPoint);
             _listener.Listen(100); // Max pending connections
-            while (DisplayEvent.edge == Direction.None)
-            {
-                Socket handler = _listener.Accept(); // Blocks until a client connects
-                Task.Run(() => HandleClient(handler)); // Handle client on a separate thread
-            }
-            Console.WriteLine("Does it ever get to here?");
+            Socket handler = _listener.Accept();
+            await HandleClient(handler);
         }
         catch (Exception ex)
         {
@@ -53,7 +50,6 @@ public class NetworkService
 
             Direction dir = JsonSerializer.Deserialize<Direction>(jsonString);
             DisplayEvent.edge = dir;
-            Console.WriteLine($"{DisplayEvent.edge}");
         }
         catch (Exception ex)
         {
@@ -61,9 +57,9 @@ public class NetworkService
         }
         finally
         {
+            //Console.WriteLine($"Client disconnected from {handler.RemoteEndPoint}");
             handler.Shutdown(SocketShutdown.Both);
             handler.Close();
-            Console.WriteLine($"Client disconnected from {handler.RemoteEndPoint}");
         }
     }
 }

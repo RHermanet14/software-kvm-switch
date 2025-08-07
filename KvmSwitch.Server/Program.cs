@@ -11,14 +11,14 @@ namespace Server {
 
     class Program
     {
-        static void Main(string[] args)
+        static async Task Main(string[] args)
         {
             var (width, height) = DisplayEvent.GetScreenDimensions();
             Console.WriteLine($"Screen dimensions: Width={width}, Height={height}");
             //MouseService m = new MouseService();
             Console.WriteLine($"Initial value of edge: {DisplayEvent.edge}");
             NetworkService network = new NetworkService();
-            network.StartListening();
+            await network.StartListening();
             Console.WriteLine($"The server direction is: {DisplayEvent.edge}");
         }
     }
