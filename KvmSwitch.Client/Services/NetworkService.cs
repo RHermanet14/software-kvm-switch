@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Text.Json;
+using services;
 namespace Shared
 {
     public class NetworkService
@@ -43,7 +44,7 @@ namespace Shared
             clientSocket?.Shutdown(SocketShutdown.Both);
             clientSocket?.Close();
         }
-        private void SendCoords(float x, float y)
+        public void SendCoords(MouseMovementEventArgs e)
         {
             try
             {
@@ -68,9 +69,9 @@ namespace Shared
             {
                 Console.WriteLine("SocketException : {0}", se.ToString());
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
-                Console.WriteLine("Unexpected exception : {0}", e.ToString());
+                Console.WriteLine("Unexpected exception : {0}", ex.ToString());
             }
         }
     }

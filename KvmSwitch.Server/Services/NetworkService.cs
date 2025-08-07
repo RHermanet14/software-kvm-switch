@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Text.Json;
+using services;
 using Shared;
 
 public class NetworkService
@@ -22,11 +23,8 @@ public class NetworkService
             _listener.Bind(localEndPoint);
             _listener.Listen(100); // Max pending connections
 
-            while (true)
-            {
-                Socket handler = _listener.Accept(); // Blocks until a client connects
-                Task.Run(() => HandleClient(handler)); // Handle client on a separate thread
-            }
+            Socket handler = _listener.Accept(); // Blocks until a client connects
+            Task.Run(() => HandleClient(handler)); // Handle client on a separate thread
         }
         catch (Exception ex)
         {
@@ -51,7 +49,7 @@ public class NetworkService
             string jsonString = sb.ToString();
 
             Direction dir = JsonSerializer.Deserialize<Direction>(jsonString);
-            Console.WriteLine($"Direction that screen will connect from: {dir}");
+            DisplayEvent.edge = dir;
         }
         catch (Exception ex)
         {

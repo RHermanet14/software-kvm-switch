@@ -5,6 +5,7 @@ using System.Text;
 using Shared;
 using System.Text.Json;
 using System.Threading.Tasks;
+using services;
 
 namespace Server {
 
@@ -14,8 +15,10 @@ namespace Server {
         {
             var (width, height) = DisplayEvent.GetScreenDimensions();
             Console.WriteLine($"Screen dimensions: Width={width}, Height={height}");
+            //MouseService m = new MouseService();
             NetworkService network = new NetworkService();
             network.StartListening();
+            Console.WriteLine($"The server direction is: {DisplayEvent.edge}");
         }
     }
 

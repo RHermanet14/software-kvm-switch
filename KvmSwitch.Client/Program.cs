@@ -40,26 +40,10 @@ namespace Client {
         }
         private void OnMouseMovement(object? sender, MouseMovementEventArgs e)
         {
-            EstimateVelocity(e.VelocityX, e.VelocityY, e.TimeDelta);
-            //SendCoords(x, y);
+            //EstimateVelocity(e.VelocityX, e.VelocityY, e.TimeDelta);
+            network?.SendCoords(e);
             Console.WriteLine($"Estimated cursor position: X={x:F1}, Y={y:F1}");
             Console.WriteLine($"Actual cursor position: X={MouseEvent.GetX()}, Y={MouseEvent.GetY()}");
-        }
-        private void EstimateVelocity(float dx, float dy, double dt)
-        {
-            x += (int)(dx * dt);
-            y += (int)(dy * dt);
-            /*
-            var (width, height) = DisplayEvent.GetScreenDimensions();
-            if (x > width)
-                x = width;
-            if (x < 0)
-                x = 0;
-            if (y > height)
-                y = height;
-            if (y < 0)
-                y = 0;
-            */
         }
     }
 
