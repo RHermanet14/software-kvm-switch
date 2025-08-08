@@ -1,11 +1,11 @@
 using Shared;
 namespace services
 {
-    class MouseService
+    public static class MouseService
     {
         private static int x = MouseEvent.GetX();
         private static int y = MouseEvent.GetY();
-        public void EstimateVelocity(float dx, float dy, double dt)
+        public static void EstimateVelocity(float dx, float dy, double dt)
         {
             x += (int)(dx * dt);
             y += (int)(dy * dt);

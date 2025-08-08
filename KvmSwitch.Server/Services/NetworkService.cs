@@ -2,7 +2,6 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Text.Json;
-using System.Threading.Tasks;
 using services;
 using Shared;
 
@@ -16,7 +15,6 @@ public class NetworkService
     {
         IPAddress ip = IPAddress.Any; // Listen on all available network interfaces
         IPEndPoint localEndPoint = new IPEndPoint(ip, Port);
-
         _listener = new Socket(ip.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
 
         try
@@ -57,7 +55,6 @@ public class NetworkService
         }
         finally
         {
-            //Console.WriteLine($"Client disconnected from {handler.RemoteEndPoint}");
             handler.Shutdown(SocketShutdown.Both);
             handler.Close();
         }

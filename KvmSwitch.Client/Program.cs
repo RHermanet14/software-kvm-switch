@@ -6,7 +6,6 @@ using System.Text;
 using Shared;
 using services;
 using System.Windows.Forms;
-using Microsoft.VisualBasic.Devices;
 
 namespace Client {
     public class MouseTrackingContext : ApplicationContext
@@ -42,8 +41,8 @@ namespace Client {
         {
             //EstimateVelocity(e.VelocityX, e.VelocityY, e.TimeDelta);
             network?.SendCoords(e);
-            Console.WriteLine($"Estimated cursor position: X={x:F1}, Y={y:F1}");
-            Console.WriteLine($"Actual cursor position: X={MouseEvent.GetX()}, Y={MouseEvent.GetY()}");
+            //Console.WriteLine($"Estimated cursor position: X={x:F1}, Y={y:F1}");
+            //Console.WriteLine($"Actual cursor position: X={MouseEvent.GetX()}, Y={MouseEvent.GetY()}");
         }
     }
 

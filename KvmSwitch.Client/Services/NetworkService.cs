@@ -14,11 +14,6 @@ namespace Shared
             serverIP = ip;
         }
 
-        private static byte[] Serialize(MouseData s)
-        {
-            return Encoding.UTF8.GetBytes(JsonSerializer.Serialize(s));
-        }
-
         public bool Connect(Direction direction)
         {
             try
@@ -48,12 +43,10 @@ namespace Shared
         {
             try
             {
-                byte[] messageReceived = new byte[1024];
-                int byteRecv;
                 if (clientSocket != null)
                 {
-                    byteRecv = clientSocket.Receive(messageReceived);
-                    Console.WriteLine("Message from Server -> {0}", Encoding.ASCII.GetString(messageReceived, 0, byteRecv));
+                    byte[] messageSent = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(e));
+                    int byteSent = clientSocket.Send(messageSent);
                 }
                 else
                 {

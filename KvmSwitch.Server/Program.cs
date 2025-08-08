@@ -19,7 +19,14 @@ namespace Server {
             Console.WriteLine($"Initial value of edge: {DisplayEvent.edge}");
             NetworkService network = new NetworkService();
             await network.StartListening();
-            Console.WriteLine($"The server direction is: {DisplayEvent.edge}");
+            //while (OnScreen)
+            //{
+            // receive coordinates
+            // Estimate Velocity
+            // Set cursor position
+                
+            //}
+            //Console.WriteLine($"The server direction is: {DisplayEvent.edge}");
         }
     }
 
