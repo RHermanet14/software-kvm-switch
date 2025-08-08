@@ -18,7 +18,8 @@ namespace Server {
             //MouseService m = new MouseService();
             Console.WriteLine($"Initial value of edge: {DisplayEvent.edge}");
             NetworkService network = new NetworkService();
-            await network.StartListening();
+            // Handle keyboard interrupt and properly close socket when needed
+            await network.StartConnection();
             //while (OnScreen)
             //{
             // receive coordinates

@@ -1,6 +1,7 @@
 using System;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
+using Shared;
 namespace services
 {
     public class MouseService : NativeWindow, IDisposable
@@ -220,14 +221,9 @@ namespace services
                 // Fire event
                 MouseMovement?.Invoke(this, new MouseMovementEventArgs
                 {
-                    DeltaX = deltaX,
-                    DeltaY = deltaY,
                     VelocityX = VelocityX,
                     VelocityY = VelocityY,
-                    AccelerationX = AccelerationX,
-                    AccelerationY = AccelerationY,
                     TimeDelta = timeDelta / 1000,
-                    Timestamp = currentTime
                 });
             }
         }
@@ -278,15 +274,5 @@ namespace services
             }
         }
     }
-    public class MouseMovementEventArgs : EventArgs
-    {
-        public long DeltaX { get; set; }
-        public long DeltaY { get; set; }
-        public float VelocityX { get; set; }
-        public float VelocityY { get; set; }
-        public float AccelerationX { get; set; }
-        public float AccelerationY { get; set; }
-        public double TimeDelta { get; set; }
-        public DateTime Timestamp { get; set; }
-    }
+    
 }

@@ -10,8 +10,6 @@ using System.Windows.Forms;
 namespace Client {
     public class MouseTrackingContext : ApplicationContext
     {
-        private static int x = MouseEvent.GetX();
-        private static int y = MouseEvent.GetY();
         private MouseService? mouseTracker;
         private NetworkService? network;
         public MouseTrackingContext(string ip, Dir dir)
@@ -42,7 +40,7 @@ namespace Client {
             //EstimateVelocity(e.VelocityX, e.VelocityY, e.TimeDelta);
             network?.SendCoords(e);
             //Console.WriteLine($"Estimated cursor position: X={x:F1}, Y={y:F1}");
-            //Console.WriteLine($"Actual cursor position: X={MouseEvent.GetX()}, Y={MouseEvent.GetY()}");
+            Console.WriteLine($"Actual cursor position: X={MouseEvent.GetX()}, Y={MouseEvent.GetY()}");
         }
     }
 

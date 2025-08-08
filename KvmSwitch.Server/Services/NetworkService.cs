@@ -11,7 +11,7 @@ public class NetworkService
     private const int Port = 11111;
     private const int BufferSize = 1024;
 
-    public async Task StartListening()
+    public async Task StartConnection()
     {
         IPAddress ip = IPAddress.Any; // Listen on all available network interfaces
         IPEndPoint localEndPoint = new IPEndPoint(ip, Port);
@@ -20,9 +20,9 @@ public class NetworkService
         try
         {
             _listener.Bind(localEndPoint);
-            _listener.Listen(100); // Max pending connections
-            Socket handler = _listener.Accept();
-            await HandleClient(handler);
+            _listener.Listen(); // Max pending connections
+            Socket handler = _listener.Accept();    // Does the server socket close when handler is closed?
+            await HandleInitialConnection(handler);
         }
         catch (Exception ex)
         {
@@ -30,7 +30,7 @@ public class NetworkService
         }
     }
 
-    private async Task HandleClient(Socket handler)
+    private async Task HandleInitialConnection(Socket handler)
     {
         byte[] buffer = new byte[BufferSize];
         StringBuilder sb = new StringBuilder();

@@ -2,8 +2,8 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Text.Json;
-using services;
-namespace Shared
+using Shared;
+namespace services
 {
     public class NetworkService
     {

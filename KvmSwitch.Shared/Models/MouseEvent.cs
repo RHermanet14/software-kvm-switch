@@ -2,7 +2,7 @@ using System;
 using System.Runtime.InteropServices;
 namespace Shared
 {
-    public enum CLICKTYPE {LEFT, RIGHT, MIDDLE, FORWARD, BACK}
+    public enum CLICKTYPE { LEFT, RIGHT, MIDDLE, FORWARD, BACK }
     public class MouseEvent
     {
         [DllImport("user32.dll")] // For the GetCursorPosition function
@@ -31,5 +31,11 @@ namespace Shared
             throw new InvalidOperationException("Failed to retrieve cursor position.");
         }
 
+    }
+    public class MouseMovementEventArgs : EventArgs
+    {
+        public float VelocityX { get; set; }
+        public float VelocityY { get; set; }
+        public double TimeDelta { get; set; }
     }
 }
