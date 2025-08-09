@@ -11,7 +11,7 @@ public class NetworkService
     private const int Port = 11111;
     private const int BufferSize = 1024;
 
-    public async Task StartConnection()
+    public void StartConnection()
     {
         IPAddress ip = IPAddress.Any; // Listen on all available network interfaces
         IPEndPoint localEndPoint = new IPEndPoint(ip, Port);
@@ -22,7 +22,10 @@ public class NetworkService
             _listener.Bind(localEndPoint);
             _listener.Listen(); // Max pending connections
             Socket handler = _listener.Accept();    // Does the server socket close when handler is closed?
-            await HandleInitialConnection(handler);
+            Task.Run(async () =>
+            {
+                await HandleInitialConnection(handler);
+            });
         }
         catch (Exception ex)
         {
@@ -46,8 +49,9 @@ public class NetworkService
 
             string jsonString = sb.ToString();
 
-            Direction dir = JsonSerializer.Deserialize<Direction>(jsonString);
-            DisplayEvent.edge = dir;
+            InitialMouseData m = JsonSerializer.Deserialize<InitialMouseData>(jsonString);
+            DisplayEvent.edge = m.direction;
+            DisplayEvent.margin = m.margin;
         }
         catch (Exception ex)
         {
@@ -58,5 +62,40 @@ public class NetworkService
             handler.Shutdown(SocketShutdown.Both);
             handler.Close();
         }
+    }
+
+    public async Task ReceiveCoords()
+    {
+        byte[] buffer = new byte[BufferSize];
+        StringBuilder sb = new StringBuilder();
+        int bytesRead;
+        if (_listener != null)
+        {
+            try
+            {
+                do
+                {
+                    bytesRead = await _listener.ReceiveAsync(new ArraySegment<byte>(buffer), SocketFlags.None);
+                    sb.Append(Encoding.UTF8.GetString(buffer, 0, bytesRead));
+                } while (_listener.Available > 0); // Continue reading if more data is available
+
+                string jsonString = sb.ToString();
+
+                InitialMouseData m = JsonSerializer.Deserialize<InitialMouseData>(jsonString);
+                DisplayEvent.edge = m.direction;
+                DisplayEvent.margin = m.margin;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error handling client: {ex.Message}");
+            }
+        }
+        
+    }
+
+    public void Disconnect()
+    {
+        _listener?.Shutdown(SocketShutdown.Both);
+        _listener?.Close();
     }
 }

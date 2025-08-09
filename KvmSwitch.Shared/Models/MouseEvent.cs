@@ -2,7 +2,6 @@ using System;
 using System.Runtime.InteropServices;
 namespace Shared
 {
-    public enum CLICKTYPE { LEFT, RIGHT, MIDDLE, FORWARD, BACK }
     public class MouseEvent
     {
         [DllImport("user32.dll")] // For the GetCursorPosition function

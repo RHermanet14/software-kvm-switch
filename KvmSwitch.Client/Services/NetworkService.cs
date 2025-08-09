@@ -14,7 +14,7 @@ namespace services
             serverIP = ip;
         }
 
-        public bool Connect(Direction direction)
+        public bool Connect(Direction direction, int margin)
         {
             try
             {
@@ -23,7 +23,8 @@ namespace services
                 IPEndPoint remoteEndPoint = new IPEndPoint(ipAddr, 11111);
                 clientSocket = new Socket(ipAddr.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
                 clientSocket.Connect(remoteEndPoint);
-                byte[] messageSent = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(direction));
+                var m = new InitialMouseData(direction, margin);
+                byte[] messageSent = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(m));
                 int byteSent = clientSocket.Send(messageSent);
                 return true;
             }

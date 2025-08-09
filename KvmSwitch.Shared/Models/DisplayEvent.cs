@@ -24,6 +24,7 @@ namespace Shared
     }
     public static class DisplayEvent
     {
+        public static int margin { get; set; } = 10;
         private static int width { get; set; } = -1;
         private static int height { get; set; } = -1;
         public static Direction edge { get; set; } = Direction.None;
@@ -43,19 +44,19 @@ namespace Shared
             switch (edge)
             {
                 case Direction.Up:
-                    if (cursorY < 0)
+                    if (cursorY <= margin)
                         return false;
                     return true;
                 case Direction.Down:
-                    if (cursorY > height)
+                    if (cursorY >= height - margin)
                         return false;
                     return true;
                 case Direction.Left:
-                    if (cursorX < 0)
+                    if (cursorX <= margin)
                         return false;
                     return true;
                 case Direction.Right:
-                    if (cursorX > width)
+                    if (cursorX >= width - margin)
                         return false;
                     return true;
                 default:

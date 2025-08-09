@@ -1,9 +1,13 @@
 namespace Shared
 {
-    public class MouseData
+    public struct InitialMouseData
     {
-        public int x;
-        public int y;
-        //CLICKTYPE click;
+        public Direction direction { get; set; }
+        public int margin { get; set; }
+        public InitialMouseData(Direction d, int m)
+        {
+            direction = d;
+            margin = m;
+        }
     }
 }
