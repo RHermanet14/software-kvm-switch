@@ -14,7 +14,6 @@ namespace Client {
         private NetworkService? network;
         public MouseTrackingContext(string ip, Dir dir, int margin)
         {
-            /*
             network = new NetworkService(ip);
 
             if (!network.Connect(!dir, margin))
@@ -22,7 +21,6 @@ namespace Client {
                 ExitThread();
                 Environment.Exit(0);
             }
-            */
             Console.CancelKeyPress += OnCancelKeyPress; // Append custom function to keyboard interrupt
             mouseTracker = new MouseService();
             mouseTracker.MouseMovement += OnMouseMovement;
@@ -39,18 +37,7 @@ namespace Client {
         }
         private void OnMouseMovement(object? sender, MouseMovementEventArgs e)
         {
-            //EstimateVelocity(e.VelocityX, e.VelocityY, e.TimeDelta);
-            //network?.SendCoords(e);
-            //Console.WriteLine($"Estimated cursor position: X={x:F1}, Y={y:F1}");
-
-            if (MouseEvent.GetX() > 1900)
-            {
-                StopService();
-            }
-            else
-            {
-                Console.WriteLine($"Actual cursor position: X={MouseEvent.GetX()}, Y={MouseEvent.GetY()}");
-            }
+            network?.SendCoords(e);
         }
         private void StopService()
         {

@@ -39,6 +39,30 @@ namespace Shared
             width = screenBounds.Width; height = screenBounds.Height;
             return (screenBounds.Width, screenBounds.Height);
         }
+        public static bool OnScreen()
+        {
+            switch (edge)
+            {
+                case Direction.Up:
+                    if (MouseEvent.GetY() <= margin)
+                        return false;
+                    return true;
+                case Direction.Down:
+                    if (MouseEvent.GetY() >= height - margin)
+                        return false;
+                    return true;
+                case Direction.Left:
+                    if (MouseEvent.GetX() <= margin)
+                        return false;
+                    return true;
+                case Direction.Right:
+                    if (MouseEvent.GetX() >= width - margin)
+                        return false;
+                    return true;
+                default:
+                    return false;
+            }
+        }
         public static bool OnScreen(int cursorX, int cursorY)
         {
             switch (edge)

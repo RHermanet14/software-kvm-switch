@@ -18,7 +18,14 @@ namespace Server
             network = new NetworkService();
             network.StartConnection();
         }
-        
+        public void RunSocket()
+        {
+            Task.Run(async () =>
+            {
+                if (network != null)
+                    await network.ReceiveCoords();
+            });
+        }
         public void KeyboardInterrupt()
         {
             Console.WriteLine("Terminating Server");
@@ -37,16 +44,11 @@ namespace Server
             Console.WriteLine($"Initial value of edge: {DisplayEvent.edge}");
             l = new Listening();
             // Handle keyboard interrupt and properly close socket when needed
-            //while(true) {
-            while (DisplayEvent.OnScreen(1, 1))
+            while (DisplayEvent.OnScreen())
             {
-                // receive coordinates
-                // Estimate Velocity
-                // Set cursor position
-
+                l.RunSocket();
+                MouseService.SetCursor();
             }
-            // Send signal back to client
-            //}
         }
         private static void OnCancelKeyPress(object? sender, ConsoleCancelEventArgs e)
         {

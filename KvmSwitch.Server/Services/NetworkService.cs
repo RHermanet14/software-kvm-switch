@@ -81,9 +81,9 @@ public class NetworkService
 
                 string jsonString = sb.ToString();
 
-                InitialMouseData m = JsonSerializer.Deserialize<InitialMouseData>(jsonString);
-                DisplayEvent.edge = m.direction;
-                DisplayEvent.margin = m.margin;
+                MouseMovementEventArgs? m = JsonSerializer.Deserialize<MouseMovementEventArgs>(jsonString);
+                if (m != null)
+                    MouseService.EstimateVelocity(m);
             }
             catch (Exception ex)
             {
