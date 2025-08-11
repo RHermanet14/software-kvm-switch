@@ -13,47 +13,83 @@ namespace Server
     public class Listening
     {
         private NetworkService? network;
+        public bool HasInitialConnection => network?.HasInitialConnection == true;
+        public bool HasActiveClient => network?.HasActiveCoordClient == true;
         public Listening()
         {
             network = new NetworkService();
             network.StartConnection();
         }
-        public void RunSocket()
+        public async Task<bool> RunSocket()
         {
-            Task.Run(async () =>
-            {
-                if (network != null)
-                    await network.ReceiveCoords();
-            });
+            if (network == null) return false;
+            if (!network.HasActiveCoordClient && network.IsListening())
+                network.AcceptRequest();
+            if (network.HasActiveCoordClient)
+                return await network.ReceiveCoords();
+            return network.HasInitialConnection;
         }
         public void KeyboardInterrupt()
         {
             Console.WriteLine("Terminating Server");
-            if (network != null)
-                network.Disconnect();
+            network?.Disconnect();
         }
     }
     class Program
     {
         private static Listening? l;
-        static void Main(string[] args)
+        private static volatile bool _isRunning = true;
+        static async Task Main(string[] args)
         {
             Console.CancelKeyPress += OnCancelKeyPress;
             var (width, height) = DisplayEvent.GetScreenDimensions();
             Console.WriteLine($"Screen dimensions: Width={width}, Height={height}");
             Console.WriteLine($"Initial value of edge: {DisplayEvent.edge}");
             l = new Listening();
-            // Handle keyboard interrupt and properly close socket when needed
-            while (DisplayEvent.OnScreen())
+
+
+            while (_isRunning && !l.HasInitialConnection)
+                await Task.Delay(100);
+            if (!_isRunning) return;
+            Console.WriteLine("Start listening for coordinates");
+            while (_isRunning)
             {
-                l.RunSocket();
-                MouseService.SetCursor();
+                try
+                {
+                    bool keepRunning = await l.RunSocket();
+                    if (!keepRunning)
+                    {
+                        Console.WriteLine("Network service stopped");
+                        break;
+                    }
+                    await Task.Delay(1);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error in main loop: {ex.Message}");
+                    await Task.Delay(100);
+                }
             }
+            Console.WriteLine("Program exiting...");
         }
         private static void OnCancelKeyPress(object? sender, ConsoleCancelEventArgs e)
         {
-            l?.KeyboardInterrupt();
-            //e.Cancel = true; // prevent immediate termination
+            e.Cancel = true;
+            _isRunning = false;
+            try
+            {
+                l?.KeyboardInterrupt();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error during cleanup: {ex.Message}");
+            }
+
+            Task.Delay(2000).ContinueWith(_ =>
+            {
+                Console.WriteLine("Forcing program to exit...");
+                Environment.Exit(0);
+            });
         }
         
     }
