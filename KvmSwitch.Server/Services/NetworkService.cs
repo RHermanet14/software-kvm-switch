@@ -1,3 +1,4 @@
+using System.Linq.Expressions;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -100,7 +101,6 @@ public class NetworkService
         {
             if (!_isConnected)
             {
-                Console.WriteLine(jsonString);
                 InitialMouseData? initial = JsonSerializer.Deserialize<InitialMouseData>(jsonString);
                 if (initial != null)
                 {
@@ -111,20 +111,77 @@ public class NetworkService
                     return;
                 }
             }
-            MouseMovementEventArgs? m = JsonSerializer.Deserialize<MouseMovementEventArgs>(jsonString);
-            if (m != null)
+
+            var jsonObjects = SplitJsonObjects(jsonString);
+            foreach (string jsonObj in jsonObjects)
             {
-                MouseService.EstimateVelocity(m);
-                MouseService.SetCursor();
-                return;
+                if (string.IsNullOrWhiteSpace(jsonObj)) continue;
+                try
+                {
+                    MouseMovementEventArgs? m = JsonSerializer.Deserialize<MouseMovementEventArgs>(jsonObj);
+                    if (m != null)
+                    {
+                        MouseService.EstimateVelocity(m);
+                        MouseService.SetCursor();
+                    }
+                }
+                catch (JsonException ex)
+                {
+                    Console.WriteLine($"Error parsing individual JSON object: {ex.Message}");
+                    Console.WriteLine($"JSON object: {jsonObj}");
+                    
+                }
             }
-            Console.WriteLine($"Could not parse received data: {jsonString}");
+            
         }
         catch (JsonException ex)
         {
             Console.WriteLine($"JSON parsing error: {ex.Message}");
             Console.WriteLine($"Received data: {jsonString}");
         }
+    }
+
+    private List<string> SplitJsonObjects(string concatenatedJson)
+    {
+        var result = new List<string>();
+        int startPos = 0;
+        
+        while (startPos < concatenatedJson.Length)
+        {
+            // Find the start of next JSON object
+            int openBrace = concatenatedJson.IndexOf('{', startPos);
+            if (openBrace == -1) break;
+            
+            // Find the matching closing brace
+            int braceCount = 0;
+            int closeBrace = -1;
+            
+            for (int i = openBrace; i < concatenatedJson.Length; i++)
+            {
+                if (concatenatedJson[i] == '{')
+                    braceCount++;
+                else if (concatenatedJson[i] == '}')
+                {
+                    braceCount--;
+                    if (braceCount == 0)
+                    {
+                        closeBrace = i;
+                        break;
+                    }
+                }
+            }
+            
+            if (closeBrace != -1)
+            {
+                string jsonObj = concatenatedJson.Substring(openBrace, closeBrace - openBrace + 1);
+                result.Add(jsonObj);
+                startPos = closeBrace + 1;
+            }
+            else
+                break;
+        }
+        
+        return result;
     }
 
     private void CloseCurrentClient()

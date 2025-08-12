@@ -26,7 +26,6 @@ namespace services
             Point screenPos = Cursor.Position;
             Point newPos = new(x, y);
             Cursor.Position = newPos;
-            Console.WriteLine(screenPos);
         }
     }
 }
