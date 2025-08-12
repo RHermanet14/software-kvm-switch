@@ -25,62 +25,10 @@ public class NetworkService
         {
             _listener.Bind(localEndPoint);
             _listener.Listen(); // Max pending connections
-            Socket handler = _listener.Accept();    // Does the server socket close when handler is closed?
-            Task.Run(async () =>
-            {
-                await HandleInitialConnection(handler);
-            });
         }
         catch (Exception ex)
         {
             Console.WriteLine($"Error: {ex.Message}");
-        }
-    }
-
-    private async Task HandleInitialConnection(Socket handler)
-    {
-        byte[] buffer = new byte[BufferSize];
-        StringBuilder sb = new StringBuilder();
-        int bytesRead;
-
-        try
-        {
-            do
-            {
-                bytesRead = await handler.ReceiveAsync(new ArraySegment<byte>(buffer), SocketFlags.None);
-                sb.Append(Encoding.UTF8.GetString(buffer, 0, bytesRead));
-            } while (handler.Available > 0); // Continue reading if more data is available
-
-            string jsonString = sb.ToString();
-
-            InitialMouseData m = JsonSerializer.Deserialize<InitialMouseData>(jsonString);
-            DisplayEvent.edge = m.direction;
-            DisplayEvent.margin = m.margin;
-            Console.WriteLine($"{DisplayEvent.edge}, {DisplayEvent.margin}");
-
-            _isConnected = true;
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error handling client: {ex.Message}");
-        }
-        finally
-        {
-            handler.Shutdown(SocketShutdown.Both);
-            handler.Close();
-        }
-    }
-
-    public bool IsListening()
-    {
-        if (_listener == null || !_isConnected) return false;
-        try
-        {
-            return _listener.Poll(0, SelectMode.SelectRead);
-        }
-        catch
-        {
-            return false;
         }
     }
 
@@ -92,7 +40,6 @@ public class NetworkService
             if (_listener.Poll(0, SelectMode.SelectRead))
             {
                 _currentClient = _listener.Accept();
-                Console.WriteLine($"Coordinate client connected from {_currentClient.RemoteEndPoint}");
                 return true;
             }
         }
@@ -104,7 +51,7 @@ public class NetworkService
     }
     public async Task<bool> ReceiveCoords()
     {
-        if (_currentClient == null || _currentClient.Connected) return false;
+        if (_currentClient == null || !_currentClient.Connected) return false;
 
         byte[] buffer = new byte[BufferSize];
         StringBuilder sb = new StringBuilder();
@@ -130,12 +77,7 @@ public class NetworkService
             string jsonString = sb.ToString();
             if (!string.IsNullOrEmpty(jsonString))
             {
-                MouseMovementEventArgs? m = JsonSerializer.Deserialize<MouseMovementEventArgs>(jsonString);
-                if (m != null)
-                {
-                    MouseService.EstimateVelocity(m);
-                    MouseService.SetCursor();
-                }
+                ProcessReceivedData(jsonString);
             }
             return true;
         }
@@ -150,6 +92,39 @@ public class NetworkService
             Console.WriteLine($"Error receiving coordinates: {ex.Message}");
             return true; // Try again
         }       
+    }
+
+    private void ProcessReceivedData(string jsonString)
+    {
+        try
+        {
+            if (!_isConnected)
+            {
+                Console.WriteLine(jsonString);
+                InitialMouseData? initial = JsonSerializer.Deserialize<InitialMouseData>(jsonString);
+                if (initial != null)
+                {
+                    DisplayEvent.edge = initial.Value.Direction;
+                    DisplayEvent.margin = initial.Value.Margin;
+                    Console.WriteLine($"Initial data received: {DisplayEvent.edge}, {DisplayEvent.margin}");
+                    _isConnected = true;
+                    return;
+                }
+            }
+            MouseMovementEventArgs? m = JsonSerializer.Deserialize<MouseMovementEventArgs>(jsonString);
+            if (m != null)
+            {
+                MouseService.EstimateVelocity(m);
+                MouseService.SetCursor();
+                return;
+            }
+            Console.WriteLine($"Could not parse received data: {jsonString}");
+        }
+        catch (JsonException ex)
+        {
+            Console.WriteLine($"JSON parsing error: {ex.Message}");
+            Console.WriteLine($"Received data: {jsonString}");
+        }
     }
 
     private void CloseCurrentClient()
@@ -171,6 +146,7 @@ public class NetworkService
             finally
             {
                 _currentClient = null;
+                _isConnected = false;
             }
         }
     }

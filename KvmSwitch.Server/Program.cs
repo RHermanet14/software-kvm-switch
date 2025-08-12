@@ -23,11 +23,9 @@ namespace Server
         public async Task<bool> RunSocket()
         {
             if (network == null) return false;
-            if (!network.HasActiveCoordClient && network.IsListening())
-                network.AcceptRequest();
-            if (network.HasActiveCoordClient)
-                return await network.ReceiveCoords();
-            return network.HasInitialConnection;
+            if (!network.HasActiveCoordClient) network.AcceptRequest();
+            if (network.HasActiveCoordClient) return await network.ReceiveCoords();
+            return true;
         }
         public void KeyboardInterrupt()
         {
@@ -47,11 +45,6 @@ namespace Server
             Console.WriteLine($"Initial value of edge: {DisplayEvent.edge}");
             l = new Listening();
 
-
-            while (_isRunning && !l.HasInitialConnection)
-                await Task.Delay(100);
-            if (!_isRunning) return;
-            Console.WriteLine("Start listening for coordinates");
             while (_isRunning)
             {
                 try
