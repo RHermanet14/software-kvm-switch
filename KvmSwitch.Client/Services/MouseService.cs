@@ -14,18 +14,7 @@ namespace services
         private const uint RIDEV_REMOVE = 0x00000001;
         private const uint RIDEV_INPUTSINK = 0x00000100;
         private const int WM_INPUT = 0x00FF;
-        private const ushort RI_MOUSE_LEFT_BUTTON_DOWN = 0x0001;
-        private const ushort RI_MOUSE_LEFT_BUTTON_UP = 0x0002;
-        private const ushort RI_MOUSE_RIGHT_BUTTON_DOWN = 0x0004;
-        private const ushort RI_MOUSE_RIGHT_BUTTON_UP = 0x0008;
-        private const ushort RI_MOUSE_MIDDLE_BUTTON_DOWN = 0x0010;
-        private const ushort RI_MOUSE_MIDDLE_BUTTON_UP = 0x0020;
-        private const ushort RI_MOUSE_BUTTON_4_DOWN = 0x0040;
-        private const ushort RI_MOUSE_BUTTON_4_UP = 0x0080;
-        private const ushort RI_MOUSE_BUTTON_5_DOWN = 0x0100;
-        private const ushort RI_MOUSE_BUTTON_5_UP = 0x0200;
-        private const ushort RI_MOUSE_WHEEL = 0x0400; // Uses usButtonData to determine distance
-        private const ushort RI_MOUSE_HWHEEL = 0x0800; // Uses usButtonData to determine distance
+        
         private bool _registered = false;
         private bool _disposed = false;
         private DateTime _lastUpdateTime = DateTime.Now;
@@ -149,52 +138,6 @@ namespace services
 
                             // Read mouse data directly
                             RAWMOUSE mouseData = Marshal.PtrToStructure<RAWMOUSE>(mouseDataPtr);
-
-                            switch (mouseData.usButtonFlags)
-                            {
-                                case RI_MOUSE_LEFT_BUTTON_DOWN:
-                                    Console.WriteLine("Left mouse button clicked");
-                                    break;
-                                case RI_MOUSE_LEFT_BUTTON_UP:
-                                    Console.WriteLine("Left mouse button released");
-                                    break;
-                                case RI_MOUSE_RIGHT_BUTTON_DOWN:
-                                    Console.WriteLine("right mouse button clicked");
-                                    break;
-                                case RI_MOUSE_RIGHT_BUTTON_UP:
-                                    Console.WriteLine("right mouse button released");
-                                    break;
-                                case RI_MOUSE_MIDDLE_BUTTON_DOWN:
-                                    Console.WriteLine("middle mouse button clicked");
-                                    break;
-                                case RI_MOUSE_MIDDLE_BUTTON_UP:
-                                    Console.WriteLine("middle mouse button released");
-                                    break;
-                                case RI_MOUSE_BUTTON_4_DOWN:
-                                    Console.WriteLine("mouse4 button clicked");
-                                    break;
-                                case RI_MOUSE_BUTTON_4_UP:
-                                    Console.WriteLine("mouse4 button released");
-                                    break;
-                                case RI_MOUSE_BUTTON_5_DOWN:
-                                    Console.WriteLine("mouse5 button clicked");
-                                    break;
-                                case RI_MOUSE_BUTTON_5_UP:
-                                    Console.WriteLine("mouse5 button released");
-                                    break;
-                                case RI_MOUSE_WHEEL:
-                                    if ((short)mouseData.usButtonData < 0)
-                                        Console.WriteLine("Scroll down");
-                                    else
-                                        Console.WriteLine("Scroll up");
-                                    break;
-                                case RI_MOUSE_HWHEEL:
-                                    if ((short)mouseData.usButtonData < 0)
-                                        Console.WriteLine("Scroll left");
-                                    else
-                                        Console.WriteLine("Scroll right");
-                                    break;   
-                            }
 
                             UpdateMovementData(mouseData.usButtonFlags, mouseData.usButtonData, mouseData.lLastX, mouseData.lLastY);
                         }

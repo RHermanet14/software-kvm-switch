@@ -11,7 +11,7 @@ Client:
 - Uses .NET Secret Manager (for now) to store IP
 - Send inputs to server(s) depending on which end of screen mouse is on
 - Uses RawInputDevice to get mouse (and eventually keyboard) inputs
-- Send this pair (of floats) through a TCP socket
+- Send this pair (of ints) through a TCP socket
 
 Server:
 - Recieve inputs and use them

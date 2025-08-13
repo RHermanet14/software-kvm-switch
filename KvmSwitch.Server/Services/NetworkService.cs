@@ -121,8 +121,16 @@ public class NetworkService
                     MouseMovementEventArgs? m = JsonSerializer.Deserialize<MouseMovementEventArgs>(jsonObj);
                     if (m != null)
                     {
-                        MouseService.EstimateVelocity(m);
-                        MouseService.SetCursor();
+                        if (m.ClickType == 0)
+                        {
+                            MouseService.EstimateVelocity(m);
+                            MouseService.SetCursor();
+                        }
+                        else
+                        {
+                            MouseService.HandleClick(m.ClickType, m.ScrollSpeed);
+                        }
+                        
                     }
                 }
                 catch (JsonException ex)
