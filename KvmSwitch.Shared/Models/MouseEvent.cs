@@ -33,6 +33,8 @@ namespace Shared
     }
     public class MouseMovementEventArgs : EventArgs
     {
+        public uint ClickType { get; set; }
+        public short ScrollSpeed { get; set; }
         public float VelocityX { get; set; }
         public float VelocityY { get; set; }
         public double TimeDelta { get; set; }

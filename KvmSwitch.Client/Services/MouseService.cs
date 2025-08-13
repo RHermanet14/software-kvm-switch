@@ -14,27 +14,21 @@ namespace services
         private const uint RIDEV_REMOVE = 0x00000001;
         private const uint RIDEV_INPUTSINK = 0x00000100;
         private const int WM_INPUT = 0x00FF;
+        private const ushort RI_MOUSE_LEFT_BUTTON_DOWN = 0x0001;
+        private const ushort RI_MOUSE_LEFT_BUTTON_UP = 0x0002;
+        private const ushort RI_MOUSE_RIGHT_BUTTON_DOWN = 0x0004;
+        private const ushort RI_MOUSE_RIGHT_BUTTON_UP = 0x0008;
+        private const ushort RI_MOUSE_MIDDLE_BUTTON_DOWN = 0x0010;
+        private const ushort RI_MOUSE_MIDDLE_BUTTON_UP = 0x0020;
+        private const ushort RI_MOUSE_BUTTON_4_DOWN = 0x0040;
+        private const ushort RI_MOUSE_BUTTON_4_UP = 0x0080;
+        private const ushort RI_MOUSE_BUTTON_5_DOWN = 0x0100;
+        private const ushort RI_MOUSE_BUTTON_5_UP = 0x0200;
+        private const ushort RI_MOUSE_WHEEL = 0x0400; // Uses usButtonData to determine distance
+        private const ushort RI_MOUSE_HWHEEL = 0x0800; // Uses usButtonData to determine distance
         private bool _registered = false;
         private bool _disposed = false;
-        private long _lastDeltaX = 0;
-        private long _lastDeltaY = 0;
         private DateTime _lastUpdateTime = DateTime.Now;
-        private float _lastVelocityX = 0f;
-        private float _lastVelocityY = 0f;
-        private readonly int _smoothingFactor = 3;
-        private readonly float[] _recentVelocityX;
-        private readonly float[] _recentVelocityY;
-        private int _velocityIndex = 0;
-        #endregion
-
-        #region Public Properties
-        public float VelocityX { get; private set; } = 0f;
-        public float VelocityY { get; private set; } = 0f;
-        public float AccelerationX { get; private set; } = 0f;
-        public float AccelerationY { get; private set; } = 0f;
-        public long RawDeltaX { get; private set; } = 0;
-        public long RawDeltaY { get; private set; } = 0;
-
         #endregion
         #region Structs
 
@@ -59,7 +53,7 @@ namespace services
         [StructLayout(LayoutKind.Sequential)]
         public struct RAWMOUSE
         {
-            public ushort usFlags;
+            public uint usFlags;
             public ushort usButtonFlags;
             public ushort usButtonData;
             public uint ulRawButtons; // Changed from ulong to uint
@@ -90,9 +84,6 @@ namespace services
 
         public MouseService()
         {
-            _recentVelocityX = new float[_smoothingFactor];
-            _recentVelocityY = new float[_smoothingFactor];
-
             // Create a hidden window for receiving raw input messages
             CreateHandle(new CreateParams
             {
@@ -155,11 +146,57 @@ namespace services
                             // Calculate offset to mouse data (after header)
                             int headerSize = Marshal.SizeOf<RAWINPUTHEADER>();
                             IntPtr mouseDataPtr = IntPtr.Add(buffer, headerSize);
-                            
+
                             // Read mouse data directly
                             RAWMOUSE mouseData = Marshal.PtrToStructure<RAWMOUSE>(mouseDataPtr);
-                            
-                            UpdateMovementData(mouseData.lLastX, mouseData.lLastY);
+
+                            switch (mouseData.usButtonFlags)
+                            {
+                                case RI_MOUSE_LEFT_BUTTON_DOWN:
+                                    Console.WriteLine("Left mouse button clicked");
+                                    break;
+                                case RI_MOUSE_LEFT_BUTTON_UP:
+                                    Console.WriteLine("Left mouse button released");
+                                    break;
+                                case RI_MOUSE_RIGHT_BUTTON_DOWN:
+                                    Console.WriteLine("right mouse button clicked");
+                                    break;
+                                case RI_MOUSE_RIGHT_BUTTON_UP:
+                                    Console.WriteLine("right mouse button released");
+                                    break;
+                                case RI_MOUSE_MIDDLE_BUTTON_DOWN:
+                                    Console.WriteLine("middle mouse button clicked");
+                                    break;
+                                case RI_MOUSE_MIDDLE_BUTTON_UP:
+                                    Console.WriteLine("middle mouse button released");
+                                    break;
+                                case RI_MOUSE_BUTTON_4_DOWN:
+                                    Console.WriteLine("mouse4 button clicked");
+                                    break;
+                                case RI_MOUSE_BUTTON_4_UP:
+                                    Console.WriteLine("mouse4 button released");
+                                    break;
+                                case RI_MOUSE_BUTTON_5_DOWN:
+                                    Console.WriteLine("mouse5 button clicked");
+                                    break;
+                                case RI_MOUSE_BUTTON_5_UP:
+                                    Console.WriteLine("mouse5 button released");
+                                    break;
+                                case RI_MOUSE_WHEEL:
+                                    if ((short)mouseData.usButtonData < 0)
+                                        Console.WriteLine("Scroll down");
+                                    else
+                                        Console.WriteLine("Scroll up");
+                                    break;
+                                case RI_MOUSE_HWHEEL:
+                                    if ((short)mouseData.usButtonData < 0)
+                                        Console.WriteLine("Scroll left");
+                                    else
+                                        Console.WriteLine("Scroll right");
+                                    break;   
+                            }
+
+                            UpdateMovementData(mouseData.usButtonFlags, mouseData.usButtonData, mouseData.lLastX, mouseData.lLastY);
                         }
                     }
                 }
@@ -171,78 +208,25 @@ namespace services
             base.WndProc(ref m);
         }
 
-        private void UpdateMovementData(long deltaX, long deltaY)
+        private void UpdateMovementData(uint flags, ushort data, int deltaX, int deltaY)
         {
-            // Filter out zero movement to reduce noise
-            if (deltaX == 0 && deltaY == 0)
-                return;
-
             DateTime currentTime = DateTime.Now;
             double timeDelta = (currentTime - _lastUpdateTime).TotalMilliseconds;
 
             if (timeDelta > 0)
             {
-                // Store raw delta values
-                RawDeltaX = deltaX;
-                RawDeltaY = deltaY;
-
-                // Calculate velocity (pixels per second)
-                float currentVelocityX = (float)(deltaX / (timeDelta / 1000.0));
-                float currentVelocityY = (float)(deltaY / (timeDelta / 1000.0));
-
-                // Apply smoothing to velocity
-                _recentVelocityX[_velocityIndex] = currentVelocityX;
-                _recentVelocityY[_velocityIndex] = currentVelocityY;
-                
-                _velocityIndex = (_velocityIndex + 1) % _smoothingFactor;
-
-                // Calculate smoothed velocity
-                float smoothedVelocityX = 0f;
-                float smoothedVelocityY = 0f;
-                for (int i = 0; i < _smoothingFactor; i++)
-                {
-                    smoothedVelocityX += _recentVelocityX[i];
-                    smoothedVelocityY += _recentVelocityY[i];
-                }
-                VelocityX = currentVelocityX; //smoothedVelocityX / _smoothingFactor;
-                VelocityY = currentVelocityY; //smoothedVelocityY / _smoothingFactor;
-
-                // Calculate acceleration (change in velocity per second)
-                AccelerationX = (float)((VelocityX - _lastVelocityX) / (timeDelta / 1000.0));
-                AccelerationY = (float)((VelocityY - _lastVelocityY) / (timeDelta / 1000.0));
-
-                // Update tracking variables
-                _lastDeltaX = deltaX;
-                _lastDeltaY = deltaY;
-                _lastVelocityX = VelocityX;
-                _lastVelocityY = VelocityY;
-                _lastUpdateTime = currentTime;
-
                 // Fire event
                 MouseMovement?.Invoke(this, new MouseMovementEventArgs
                 {
-                    VelocityX = VelocityX,
-                    VelocityY = VelocityY,
+                    ClickType = flags,
+                    ScrollSpeed = (short)data,
+                    VelocityX = deltaX,
+                    VelocityY = deltaY,
                     TimeDelta = timeDelta / 1000,
                 });
             }
         }
 
-        private void ResetValues()
-        {
-            VelocityX = VelocityY = 0f;
-            AccelerationX = AccelerationY = 0f;
-            RawDeltaX = RawDeltaY = 0;
-            _lastVelocityX = _lastVelocityY = 0f;
-            _lastDeltaX = _lastDeltaY = 0;
-
-            for (int i = 0; i < _smoothingFactor; i++)
-            {
-                _recentVelocityX[i] = 0f;
-                _recentVelocityY[i] = 0f;
-            }
-            _velocityIndex = 0;
-        }
         public bool StopTracking()
         {
             if (!_registered) return true;
@@ -258,7 +242,6 @@ namespace services
             if (success)
             {
                 _registered = false;
-                ResetValues();
             }
 
             return success;
