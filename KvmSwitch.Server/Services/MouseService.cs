@@ -1,11 +1,13 @@
 using System.Windows.Forms;
 using System.Drawing;
 using Shared;
+using System.Runtime.InteropServices;
+using System.Configuration;
 namespace services
 {
     public static class MouseService
     {
-        #region mouse click types
+        #region click types
         private const ushort RI_MOUSE_LEFT_BUTTON_DOWN = 0x0001;
         private const ushort RI_MOUSE_LEFT_BUTTON_UP = 0x0002;
         private const ushort RI_MOUSE_RIGHT_BUTTON_DOWN = 0x0004;
@@ -18,6 +20,33 @@ namespace services
         private const ushort RI_MOUSE_BUTTON_5_UP = 0x0200;
         private const ushort RI_MOUSE_WHEEL = 0x0400; // Uses usButtonData to determine distance
         private const ushort RI_MOUSE_HWHEEL = 0x0800; // Uses usButtonData to determine distance
+        #endregion
+        #region handle clicks
+        private const uint INPUT_MOUSE = 0;
+        [StructLayout(LayoutKind.Sequential)]
+        private struct MOUSEINPUT
+        {
+            public int dx;
+            public int dy;
+            public uint mouseData;
+            public uint dwFlags;
+            public uint timeDelta;
+            public IntPtr dwExtraInfo;
+        }
+        [StructLayout(LayoutKind.Explicit)]
+        private struct INPUTUNION
+        {
+            [FieldOffset(0)]
+            public MOUSEINPUT mi;
+        }
+        [StructLayout(LayoutKind.Sequential)]
+        private struct INPUT
+        {
+            public uint type;
+            public INPUTUNION inputUnion;
+        }
+        [DllImport("user32.dll")]
+        private static extern uint SendInput(uint cInputs, INPUT[] pInputs, int cbSize);
         #endregion
         private static int x = MouseEvent.GetX();
         private static int y = MouseEvent.GetY();
@@ -37,12 +66,20 @@ namespace services
         }
         public static void SetCursor()
         {
-            Point screenPos = Cursor.Position;
             Point newPos = new(x, y);
             Cursor.Position = newPos;
         }
         public static void HandleClick(uint type, short speed)
         {
+            INPUT[] input = new INPUT[1];
+            input[0].type = INPUT_MOUSE;
+            input[0].inputUnion.mi.dwFlags = type;
+            if (type == 0)
+            {
+                Console.WriteLine("Error: invalid button type");
+                return;
+            }
+            SendInput((uint)input.Length, input, Marshal.SizeOf(typeof(INPUT)));
             switch (type)
             {
                 case RI_MOUSE_LEFT_BUTTON_DOWN:
@@ -86,7 +123,10 @@ namespace services
                         Console.WriteLine("Scroll left");
                     else
                         Console.WriteLine("Scroll right");
-                    break;   
+                    break;
+                default:
+                    Console.WriteLine("Error: invalid button type");
+                    return;
             }
         }
     }
