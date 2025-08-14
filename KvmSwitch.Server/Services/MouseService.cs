@@ -94,63 +94,45 @@ namespace services
             {
                 case RI_MOUSE_LEFT_BUTTON_DOWN:
                     input[0].inputUnion.mi.dwFlags = MOUSEEVENTF_LEFTDOWN;
-                    Console.WriteLine("Left mouse button clicked");
                     break;
                 case RI_MOUSE_LEFT_BUTTON_UP:
                     input[0].inputUnion.mi.dwFlags = MOUSEEVENTF_LEFTUP;
-                    Console.WriteLine("Left mouse button released");
                     break;
                 case RI_MOUSE_RIGHT_BUTTON_DOWN:
                     input[0].inputUnion.mi.dwFlags = MOUSEEVENTF_RIGHTDOWN;
-                    Console.WriteLine("right mouse button clicked");
                     break;
                 case RI_MOUSE_RIGHT_BUTTON_UP:
                     input[0].inputUnion.mi.dwFlags = MOUSEEVENTF_RIGHTUP;
-                    Console.WriteLine("right mouse button released");
                     break;
                 case RI_MOUSE_MIDDLE_BUTTON_DOWN:
                     input[0].inputUnion.mi.dwFlags = MOUSEEVENTF_MIDDLEDOWN;
-                    Console.WriteLine("middle mouse button clicked");
                     break;
                 case RI_MOUSE_MIDDLE_BUTTON_UP:
                     input[0].inputUnion.mi.dwFlags = MOUSEEVENTF_MIDDLEUP;
-                    Console.WriteLine("middle mouse button released");
                     break;
                 case RI_MOUSE_BUTTON_4_DOWN:
                     input[0].inputUnion.mi.dwFlags = MOUSEEVENTF_XDOWN;
                     input[0].inputUnion.mi.mouseData = XBUTTON1;
-                    Console.WriteLine("mouse4 button clicked");
                     break;
                 case RI_MOUSE_BUTTON_4_UP:
                     input[0].inputUnion.mi.dwFlags = MOUSEEVENTF_XUP;
                     input[0].inputUnion.mi.mouseData = XBUTTON1;
-                    Console.WriteLine("mouse4 button released");
                     break;
                 case RI_MOUSE_BUTTON_5_DOWN:
                     input[0].inputUnion.mi.dwFlags = MOUSEEVENTF_XDOWN;
                     input[0].inputUnion.mi.mouseData = XBUTTON2;
-                    Console.WriteLine("mouse5 button clicked");
                     break;
                 case RI_MOUSE_BUTTON_5_UP:
                     input[0].inputUnion.mi.dwFlags = MOUSEEVENTF_XUP;
                     input[0].inputUnion.mi.mouseData = XBUTTON2;
-                    Console.WriteLine("mouse5 button released");
                     break;
                 case RI_MOUSE_WHEEL:
                     input[0].inputUnion.mi.dwFlags = MOUSEEVENTF_WHEEL;
                     input[0].inputUnion.mi.mouseData = (uint)speed;
-                    if (speed < 0)
-                        Console.WriteLine("Scroll down");
-                    else
-                        Console.WriteLine("Scroll up");
                     break;
                 case RI_MOUSE_HWHEEL:
                     input[0].inputUnion.mi.dwFlags = MOUSEEVENTF_HWHEEL;
                     input[0].inputUnion.mi.mouseData = (uint)speed;
-                    if (speed < 0)
-                        Console.WriteLine("Scroll left");
-                    else
-                        Console.WriteLine("Scroll right");
                     break;
                 default:
                     Console.WriteLine("Error: invalid button type");
