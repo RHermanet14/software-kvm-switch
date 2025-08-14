@@ -7,7 +7,7 @@ namespace services
 {
     public static class MouseService
     {
-        #region click types
+        #region RAWMOUSE click types
         private const ushort RI_MOUSE_LEFT_BUTTON_DOWN = 0x0001;
         private const ushort RI_MOUSE_LEFT_BUTTON_UP = 0x0002;
         private const ushort RI_MOUSE_RIGHT_BUTTON_DOWN = 0x0004;
@@ -20,6 +20,21 @@ namespace services
         private const ushort RI_MOUSE_BUTTON_5_UP = 0x0200;
         private const ushort RI_MOUSE_WHEEL = 0x0400; // Uses usButtonData to determine distance
         private const ushort RI_MOUSE_HWHEEL = 0x0800; // Uses usButtonData to determine distance
+        #endregion
+        #region mouse event click types
+        // mouse events and rawmouse have different constants for clicks
+        private const uint MOUSEEVENTF_LEFTDOWN = 0x0002;
+        private const uint MOUSEEVENTF_LEFTUP = 0x0004;
+        private const uint MOUSEEVENTF_MIDDLEDOWN = 0x0020;
+        private const uint MOUSEEVENTF_MIDDLEUP = 0x0040;
+        private const uint MOUSEEVENTF_RIGHTDOWN = 0x0008;
+        private const uint MOUSEEVENTF_RIGHTUP = 0x0010;
+        private const uint MOUSEEVENTF_XDOWN = 0x0080; // Set XBUTTON in dwFlags
+        private const uint MOUSEEVENTF_XUP = 0x0100;
+        private const uint MOUSEEVENTF_WHEEL = 0x0800;
+        private const uint MOUSEEVENTF_HWHEEL = 0x01000;
+        private const uint XBUTTON1 = 0x0001;
+        private const uint XBUTTON2 = 0x0002;
         #endregion
         #region handle clicks
         private const uint INPUT_MOUSE = 0;
@@ -74,51 +89,64 @@ namespace services
             INPUT[] input = new INPUT[1];
             input[0].type = INPUT_MOUSE;
             input[0].inputUnion.mi.dwFlags = type;
-            if (type == 0)
-            {
-                Console.WriteLine("Error: invalid button type");
-                return;
-            }
-            SendInput((uint)input.Length, input, Marshal.SizeOf(typeof(INPUT)));
+            input[0].inputUnion.mi.mouseData = 0;
             switch (type)
             {
                 case RI_MOUSE_LEFT_BUTTON_DOWN:
+                    input[0].inputUnion.mi.dwFlags = MOUSEEVENTF_LEFTDOWN;
                     Console.WriteLine("Left mouse button clicked");
                     break;
                 case RI_MOUSE_LEFT_BUTTON_UP:
+                    input[0].inputUnion.mi.dwFlags = MOUSEEVENTF_LEFTUP;
                     Console.WriteLine("Left mouse button released");
                     break;
                 case RI_MOUSE_RIGHT_BUTTON_DOWN:
+                    input[0].inputUnion.mi.dwFlags = MOUSEEVENTF_RIGHTDOWN;
                     Console.WriteLine("right mouse button clicked");
                     break;
                 case RI_MOUSE_RIGHT_BUTTON_UP:
+                    input[0].inputUnion.mi.dwFlags = MOUSEEVENTF_RIGHTUP;
                     Console.WriteLine("right mouse button released");
                     break;
                 case RI_MOUSE_MIDDLE_BUTTON_DOWN:
+                    input[0].inputUnion.mi.dwFlags = MOUSEEVENTF_MIDDLEDOWN;
                     Console.WriteLine("middle mouse button clicked");
                     break;
                 case RI_MOUSE_MIDDLE_BUTTON_UP:
+                    input[0].inputUnion.mi.dwFlags = MOUSEEVENTF_MIDDLEUP;
                     Console.WriteLine("middle mouse button released");
                     break;
                 case RI_MOUSE_BUTTON_4_DOWN:
+                    input[0].inputUnion.mi.dwFlags = MOUSEEVENTF_XDOWN;
+                    input[0].inputUnion.mi.mouseData = XBUTTON1;
                     Console.WriteLine("mouse4 button clicked");
                     break;
                 case RI_MOUSE_BUTTON_4_UP:
+                    input[0].inputUnion.mi.dwFlags = MOUSEEVENTF_XUP;
+                    input[0].inputUnion.mi.mouseData = XBUTTON1;
                     Console.WriteLine("mouse4 button released");
                     break;
                 case RI_MOUSE_BUTTON_5_DOWN:
+                    input[0].inputUnion.mi.dwFlags = MOUSEEVENTF_XDOWN;
+                    input[0].inputUnion.mi.mouseData = XBUTTON2;
                     Console.WriteLine("mouse5 button clicked");
                     break;
                 case RI_MOUSE_BUTTON_5_UP:
+                    input[0].inputUnion.mi.dwFlags = MOUSEEVENTF_XUP;
+                    input[0].inputUnion.mi.mouseData = XBUTTON2;
                     Console.WriteLine("mouse5 button released");
                     break;
                 case RI_MOUSE_WHEEL:
+                    input[0].inputUnion.mi.dwFlags = MOUSEEVENTF_WHEEL;
+                    input[0].inputUnion.mi.mouseData = (uint)speed;
                     if (speed < 0)
                         Console.WriteLine("Scroll down");
                     else
                         Console.WriteLine("Scroll up");
                     break;
                 case RI_MOUSE_HWHEEL:
+                    input[0].inputUnion.mi.dwFlags = MOUSEEVENTF_HWHEEL;
+                    input[0].inputUnion.mi.mouseData = (uint)speed;
                     if (speed < 0)
                         Console.WriteLine("Scroll left");
                     else
@@ -128,6 +156,7 @@ namespace services
                     Console.WriteLine("Error: invalid button type");
                     return;
             }
+            SendInput((uint)input.Length, input, Marshal.SizeOf(typeof(INPUT)));
         }
     }
 }
