@@ -39,6 +39,7 @@ namespace Server
         private static volatile bool _isRunning = true;
         static async Task Main(string[] args)
         {
+            bool keepRunning;
             Console.CancelKeyPress += OnCancelKeyPress;
             var (width, height) = DisplayEvent.GetScreenDimensions();
             Console.WriteLine($"Screen dimensions: Width={width}, Height={height}");
@@ -49,7 +50,7 @@ namespace Server
             {
                 try
                 {
-                    bool keepRunning = await l.RunSocket();
+                    keepRunning = await l.RunSocket();
                     if (!keepRunning)
                     {
                         Console.WriteLine("Network service stopped");

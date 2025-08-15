@@ -12,6 +12,7 @@ namespace Client {
     {
         private MouseService? mouseTracker;
         private NetworkService? network;
+        public bool Terminate { get; set; } = false;
         public MouseTrackingContext(string ip, Dir dir, int margin)
         {
             network = new NetworkService(ip);
@@ -38,6 +39,19 @@ namespace Client {
         private void OnMouseMovement(object? sender, MouseMovementEventArgs e)
         {
             network?.SendCoords(e);
+            Task.Run(async () =>
+            {
+                Terminate = await HaltSocket();
+            });
+            if (Terminate)
+                StopService();
+            // Check if received the signal to stop the service for now
+        }
+        private async Task<bool> HaltSocket()
+        {
+            if (network == null)
+                return false;
+            return await network.ReceiveTermination();
         }
         private void StopService()
         {

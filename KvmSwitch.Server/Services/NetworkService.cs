@@ -125,6 +125,11 @@ public class NetworkService
                         {
                             MouseService.EstimateVelocity(m);
                             MouseService.SetCursor();
+                            if (!DisplayEvent.OnScreen())
+                            {
+                                SendTermination();
+                                CloseCurrentClient();
+                            }
                         }
                         else
                         {
@@ -192,6 +197,35 @@ public class NetworkService
         return result;
     }
 
+    public void SendTermination()
+    {
+        try
+        {
+            if (_currentClient != null)
+            {
+                byte[] messageSent = Encoding.UTF8.GetBytes("Terminate");
+                int byteSent = _currentClient.Send(messageSent);
+            }
+            else
+            {
+                Console.WriteLine("Error: tried to terminate socket while current client was null");
+                throw new SocketException();
+            }
+        }
+        catch (ArgumentNullException ane)
+        {
+            Console.WriteLine("ArgumentNullException : {0}", ane.ToString());
+        }
+        catch (SocketException se)
+        {
+            Console.WriteLine("SocketException : {0}", se.ToString());
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("Unexpected exception : {0}", ex.ToString());
+        }
+    }
+
     private void CloseCurrentClient()
     {
         if (_currentClient != null)
@@ -213,7 +247,7 @@ public class NetworkService
                 _currentClient = null;
                 _isConnected = false;
             }
-        }
+        } 
     }
 
     public void Disconnect()

@@ -53,7 +53,7 @@ namespace services
                 {
                     throw new SocketException();
                 }
-                    
+
             }
             catch (ArgumentNullException ane)
             {
@@ -67,6 +67,30 @@ namespace services
             {
                 Console.WriteLine("Unexpected exception : {0}", ex.ToString());
             }
+        }
+        public async Task<bool> ReceiveTermination()
+        {
+            if (clientSocket == null || !clientSocket.Connected) return false;
+            byte[] buffer = new byte[1024];
+            try
+            {
+                int bytesRead = await clientSocket.ReceiveAsync(new ArraySegment<byte>(buffer), SocketFlags.None);
+                if (bytesRead == 0)
+                    return false;
+                Console.WriteLine("Termination signal received. Stopping service...");
+                return true;
+            }
+            catch (SocketException ex)
+            {
+                Console.WriteLine($"Socket error: {ex.Message}");
+                Disconnect();
+                return false;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error: {ex.Message}");
+                return false;
+            }       
         }
     }
     
