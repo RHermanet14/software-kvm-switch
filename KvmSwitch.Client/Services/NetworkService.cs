@@ -9,6 +9,7 @@ namespace services
     {
         private Socket? clientSocket;
         private readonly string serverIP;
+        private volatile bool isConnected = false;
         public NetworkService(string ip)
         {
             serverIP = ip;
@@ -26,51 +27,60 @@ namespace services
                 var m = new InitialMouseData(direction, margin);
                 byte[] messageSent = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(m));
                 int byteSent = clientSocket.Send(messageSent);
+                isConnected = true;
                 return true;
             }
             catch
             {
                 Console.WriteLine("Could not establish connection with server.");
                 clientSocket?.Close();
+                isConnected = false;
                 return false;
             }
         }
         public void Disconnect()
         {
-            clientSocket?.Shutdown(SocketShutdown.Both);
+            isConnected = false;
+            try
+            {
+                clientSocket?.Shutdown(SocketShutdown.Both);
+            }
+            catch
+            {
+                //nothing for now
+            }
+            
             clientSocket?.Close();
         }
         public void SendCoords(MouseMovementEventArgs e)
         {
+            if (!isConnected || clientSocket == null || !clientSocket.Connected)
+                return;
             try
             {
-                if (clientSocket != null)
-                {
-                    byte[] messageSent = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(e));
-                    int byteSent = clientSocket.Send(messageSent);
-                }
-                else
-                {
-                    throw new SocketException();
-                }
-
+                byte[] messageSent = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(e));
+                int byteSent = clientSocket.Send(messageSent);
             }
             catch (ArgumentNullException ane)
             {
                 Console.WriteLine("ArgumentNullException : {0}", ane.ToString());
+                isConnected = false;
             }
             catch (SocketException se)
             {
-                Console.WriteLine("SocketException : {0}", se.ToString());
+                if (isConnected)
+                    Console.WriteLine("SocketException : {0}", se.ToString());
+                isConnected = false;
             }
             catch (Exception ex)
             {
                 Console.WriteLine("Unexpected exception : {0}", ex.ToString());
+                isConnected = false;
             }
         }
         public async Task<bool> ReceiveTermination()
         {
-            if (clientSocket == null || !clientSocket.Connected) return false;
+            if (clientSocket == null || !clientSocket.Connected || !isConnected) return false;
             byte[] buffer = new byte[1024];
             try
             {
