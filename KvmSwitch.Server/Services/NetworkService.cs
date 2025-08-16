@@ -199,18 +199,12 @@ public class NetworkService
 
     public void SendTermination()
     {
+        if (_currentClient == null)
+            return;
         try
         {
-            if (_currentClient != null)
-            {
-                byte[] messageSent = Encoding.UTF8.GetBytes("Terminate");
-                int byteSent = _currentClient.Send(messageSent);
-            }
-            else
-            {
-                Console.WriteLine("Error: tried to terminate socket while current client was null");
-                throw new SocketException();
-            }
+            byte[] messageSent = Encoding.UTF8.GetBytes("Terminate");
+            int byteSent = _currentClient.Send(messageSent);
         }
         catch (ArgumentNullException ane)
         {
