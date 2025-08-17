@@ -24,7 +24,7 @@ namespace services
                 IPEndPoint remoteEndPoint = new IPEndPoint(ipAddr, 11111);
                 clientSocket = new Socket(ipAddr.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
                 clientSocket.Connect(remoteEndPoint);
-                var m = new InitialMouseData(direction, margin);
+                var m = new InitialMouseData(direction, margin, DisplayEvent.StartingPoint());
                 byte[] messageSent = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(m));
                 int byteSent = clientSocket.Send(messageSent);
                 isConnected = true;

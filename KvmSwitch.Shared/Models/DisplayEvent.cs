@@ -87,5 +87,21 @@ namespace Shared
                     return false;
             }
         }
+        public static Point StartingPoint() // Gets the starting point of the other screen, assuming its edge is opposite of the current screen
+        {
+            switch (edge)
+            {
+                case Direction.Up:
+                    return new(MouseEvent.GetX(), height - margin);
+                case Direction.Down:
+                    return new(MouseEvent.GetX(), margin);
+                case Direction.Left:
+                    return new(width - margin, MouseEvent.GetY()); // opposite x, same y
+                case Direction.Right:
+                    return new(margin, MouseEvent.GetY());
+                default:
+                    return new(0, 0);
+            }
+        }
     }
 }

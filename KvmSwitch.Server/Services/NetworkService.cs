@@ -106,6 +106,7 @@ public class NetworkService
                 {
                     DisplayEvent.edge = initial.Value.Direction;
                     DisplayEvent.margin = initial.Value.Margin;
+                    MouseService.SetInitialCursor(initial.Value.InitialCoords);
                     Console.WriteLine($"Initial data received: {DisplayEvent.edge}, {DisplayEvent.margin}");
                     _isConnected = true;
                     return;

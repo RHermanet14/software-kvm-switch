@@ -60,9 +60,6 @@ namespace Client {
             if (isTerminating)
                 return;
             network?.SendCoords(e);
-            
-            
-            // Check if received the signal to stop the service for now
         }
         private async Task<bool> HaltSocket()
         {

@@ -84,6 +84,12 @@ namespace services
             Point newPos = new(x, y);
             Cursor.Position = newPos;
         }
+        public static void SetInitialCursor(Point p)
+        {
+            Cursor.Position = p;
+            x = p.X;
+            y = p.Y;
+        }
         public static void HandleClick(uint type, short speed)
         {
             INPUT[] input = new INPUT[1];
