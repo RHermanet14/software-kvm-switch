@@ -1,3 +1,4 @@
+using System.Drawing;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -82,11 +83,18 @@ namespace services
         {
             if (clientSocket == null || !clientSocket.Connected || !isConnected) return false;
             byte[] buffer = new byte[1024];
+            StringBuilder sb = new StringBuilder();
             try
             {
                 int bytesRead = await clientSocket.ReceiveAsync(new ArraySegment<byte>(buffer), SocketFlags.None);
                 if (bytesRead == 0)
                     return false;
+                sb.Append(Encoding.UTF8.GetString(buffer, 0, bytesRead));
+                string jsonString = sb.ToString();
+                if (string.IsNullOrEmpty(jsonString))
+                    return false;
+                Point p = JsonSerializer.Deserialize<Point>(jsonString);
+                DisplayEvent.SetCursor(p);
                 Console.WriteLine("Termination signal received. Stopping service...");
                 return true;
             }

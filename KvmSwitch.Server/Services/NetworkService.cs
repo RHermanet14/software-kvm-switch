@@ -1,3 +1,4 @@
+using System.Drawing;
 using System.Linq.Expressions;
 using System.Net;
 using System.Net.Sockets;
@@ -204,7 +205,8 @@ public class NetworkService
             return;
         try
         {
-            byte[] messageSent = Encoding.UTF8.GetBytes("Terminate");
+            Point p = DisplayEvent.StartingPoint();
+            byte[] messageSent = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(p));
             int byteSent = _currentClient.Send(messageSent);
         }
         catch (ArgumentNullException ane)

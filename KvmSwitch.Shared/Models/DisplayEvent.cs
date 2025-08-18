@@ -103,5 +103,9 @@ namespace Shared
                     return new(0, 0);
             }
         }
+        public static void SetCursor(Point p)
+        {
+            Cursor.Position = p;
+        }
     }
 }
