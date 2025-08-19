@@ -11,6 +11,7 @@ namespace Client {
     public class MouseTrackingContext : ApplicationContext
     {
         private MouseService? mouseTracker;
+        private MouseSuppressionService? mouseSuppressor;
         private NetworkService? network;
         private volatile bool isTerminating = false;
         public bool Terminate { get; set; } = false;
@@ -26,8 +27,14 @@ namespace Client {
             Console.CancelKeyPress += OnCancelKeyPress; // Append custom function to keyboard interrupt
             mouseTracker = new MouseService();
             mouseTracker.MouseMovement += OnMouseMovement;
+            mouseSuppressor = new MouseSuppressionService();
             if (!mouseTracker.StartTracking())
+            {
                 ExitThread();
+                return;
+            }
+            mouseSuppressor.StartSuppression();    
+            
             MonitorTermination();
         }
         private void MonitorTermination()
@@ -49,11 +56,7 @@ namespace Client {
         }
         private void OnCancelKeyPress(object? sender, ConsoleCancelEventArgs e)
         {
-            isTerminating = true;
-            mouseTracker?.Dispose();
-            if (network != null)
-                network.Disconnect();
-            ExitThread();
+            StopService();
         }
         private void OnMouseMovement(object? sender, MouseMovementEventArgs e)
         {
@@ -72,7 +75,11 @@ namespace Client {
             if (isTerminating)
                 return;
             isTerminating = true;
+            mouseSuppressor?.StopSuppression();
+
             mouseTracker?.Dispose();
+            mouseSuppressor?.Dispose();
+
             if (network != null)
                 network.Disconnect();
             ExitThread();
@@ -84,21 +91,24 @@ namespace Client {
         [STAThread]
         static void Main(string[] args)
         {
-            Dir dir = Direction.Left;
-            int margin = 1;
-            DisplayEvent.margin = margin;
-            DisplayEvent.edge = dir;
+            DisplayEvent.margin = 1;
+            DisplayEvent.edge = Direction.Left;
+            DisplayEvent.GetScreenDimensions();
             var config = new ConfigurationBuilder()
             .AddUserSecrets<Program>()
             .Build();
             string ip = config["IP"] ?? throw new InvalidOperationException("Missing IP secret");
             while (true)
             {
-                Thread.Sleep(1000);
+
                 if (!DisplayEvent.OnScreen())
                 {
-                    Application.Run(new MouseTrackingContext(ip, dir, margin));
+                    Application.Run(new MouseTrackingContext(ip, DisplayEvent.edge, DisplayEvent.margin));
                     Thread.Sleep(500);
+                }
+                else
+                {
+                    Thread.Sleep(50);
                 }
                     
             }

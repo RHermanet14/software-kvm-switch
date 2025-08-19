@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
 using Shared;
@@ -200,5 +201,62 @@ namespace services
             }
         }
     }
-    
+    public class MouseSuppressionService : IDisposable
+    {
+        private const int WH_MOUSE_LL = 14;
+        private readonly HOOKPROC _proc;
+        private IntPtr _hookID = IntPtr.Zero;
+        private static volatile bool _suppressMouse = false;
+        public delegate IntPtr HOOKPROC(int code, IntPtr wParam, IntPtr lParam);
+        [DllImport("user32.dll")]
+        private static extern IntPtr SetWindowsHookEx(int idHook, HOOKPROC lpfn, IntPtr hMod, uint dwThreadId);
+        [DllImport("user32.dll")]
+        private static extern bool UnhookWindowsHookEx(IntPtr hhk);
+        [DllImport("user32.dll")]
+        private static extern IntPtr CallNextHookEx(IntPtr hhk, int nCode, IntPtr wParam, IntPtr lParam);
+        [DllImport("kernel32.dll")]
+        private static extern IntPtr GetModuleHandle(string lpModuleName);
+
+        public MouseSuppressionService()
+        {
+            _proc = HookCallback;
+            _hookID = SetHook(_proc);
+        }
+        public void StartSuppression() { _suppressMouse = true; }
+        public void StopSuppression() { _suppressMouse = false; }
+        public void Dispose()
+        {
+            if (_hookID != IntPtr.Zero)
+            {
+                UnhookWindowsHookEx(_hookID);
+                _hookID = IntPtr.Zero;
+            }
+        }
+        private IntPtr SetHook(HOOKPROC proc)
+        {
+            using (Process curProcess = Process.GetCurrentProcess())
+            using (ProcessModule curModule = curProcess.MainModule!)
+            {
+                return SetWindowsHookEx(WH_MOUSE_LL, proc, GetModuleHandle(curModule.ModuleName!), 0);
+            }
+        }
+        private static IntPtr HookCallback(int nCode, IntPtr wParam, IntPtr lParam)
+        {
+            try
+            {
+                if (nCode >= 0)
+                {
+                    if (_suppressMouse)
+                    {
+                        return 1;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Hook error: {ex.Message}");
+            }
+            return CallNextHookEx(IntPtr.Zero, nCode, wParam, lParam);
+        }
+    }
 }

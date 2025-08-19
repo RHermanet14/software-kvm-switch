@@ -42,8 +42,6 @@ namespace Server
             bool keepRunning;
             Console.CancelKeyPress += OnCancelKeyPress;
             var (width, height) = DisplayEvent.GetScreenDimensions();
-            Console.WriteLine($"Screen dimensions: Width={width}, Height={height}");
-            Console.WriteLine($"Initial value of edge: {DisplayEvent.edge}");
             l = new Listening();
 
             while (_isRunning)

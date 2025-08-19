@@ -63,30 +63,6 @@ namespace Shared
                     return false;
             }
         }
-        public static bool OnScreen(int cursorX, int cursorY)
-        {
-            switch (edge)
-            {
-                case Direction.Up:
-                    if (cursorY <= margin)
-                        return false;
-                    return true;
-                case Direction.Down:
-                    if (cursorY >= height - margin)
-                        return false;
-                    return true;
-                case Direction.Left:
-                    if (cursorX <= margin)
-                        return false;
-                    return true;
-                case Direction.Right:
-                    if (cursorX >= width - margin)
-                        return false;
-                    return true;
-                default:
-                    return false;
-            }
-        }
         public static Point StartingPoint() // Gets the starting point of the other screen, assuming its edge is opposite of the current screen
         {
             switch (edge)
