@@ -27,6 +27,7 @@ namespace Client {
             Console.CancelKeyPress += OnCancelKeyPress; // Append custom function to keyboard interrupt
             mouseTracker = new MouseService();
             mouseTracker.MouseMovement += OnMouseMovement;
+            mouseTracker.KeyboardInput += OnKeyboardInput;
             mouseSuppressor = new MouseSuppressionService();
             if (!mouseTracker.StartTracking())
             {
@@ -63,6 +64,13 @@ namespace Client {
             if (isTerminating)
                 return;
             network?.SendCoords(e);
+        }
+
+        private void OnKeyboardInput(object? sender, KeyboardInputEventArgs k)
+        {
+            if (isTerminating)
+                return;
+            network?.SendKeys(k);
         }
         private async Task<bool> HaltSocket()
         {

@@ -39,4 +39,9 @@ namespace Shared
         public int VelocityY { get; set; }
         public double TimeDelta { get; set; }
     }
+    public class KeyboardInputEventArgs : EventArgs
+    {
+        public ushort Key { get; set; }
+        public ushort KeyInputType { get; set; }
+    }
 }

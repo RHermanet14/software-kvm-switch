@@ -8,6 +8,7 @@ namespace services
     public class MouseService : NativeWindow, IDisposable
     {
         public event EventHandler<MouseMovementEventArgs>? MouseMovement;
+        public event EventHandler<KeyboardInputEventArgs>? KeyboardInput;
 
         #region Private Variables
         private const uint RID_INPUT = 0x10000003;
@@ -166,6 +167,11 @@ namespace services
                         {
                             RAWKEYBOARD keyboardData = Marshal.PtrToStructure<RAWKEYBOARD>(DataPtr);
                             Console.WriteLine($"{keyboardData.MakeCode}, {keyboardData.Flags}");
+                            KeyboardInput?.Invoke(this, new KeyboardInputEventArgs
+                            {
+                                Key = keyboardData.MakeCode,
+                                KeyInputType = keyboardData.Flags,
+                            });
                         }
                     }
                 }

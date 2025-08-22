@@ -79,6 +79,32 @@ namespace services
                 isConnected = false;
             }
         }
+        public void SendKeys(KeyboardInputEventArgs k)
+        {
+            if (!isConnected || clientSocket == null || !clientSocket.Connected)
+                return;
+            try
+            {
+                byte[] messageSent = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(k));
+                int byteSent = clientSocket.Send(messageSent);
+            }
+            catch (ArgumentNullException ane)
+            {
+                Console.WriteLine("ArgumentNullException : {0}", ane.ToString());
+                isConnected = false;
+            }
+            catch (SocketException se)
+            {
+                if (isConnected)
+                    Console.WriteLine("SocketException : {0}", se.ToString());
+                isConnected = false;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Unexpected exception : {0}", ex.ToString());
+                isConnected = false;
+            }
+        }
         public async Task<bool> ReceiveTermination()
         {
             if (clientSocket == null || !clientSocket.Connected || !isConnected) return false;
@@ -108,7 +134,7 @@ namespace services
             {
                 Console.WriteLine($"Error: {ex.Message}");
                 return false;
-            }       
+            }
         }
     }
     
