@@ -5,6 +5,7 @@ using System.Net.Sockets;
 using System.Text;
 using System.Text.Json;
 using services;
+using System.Runtime.InteropServices;
 using Shared;
 
 public class NetworkService
@@ -120,34 +121,43 @@ public class NetworkService
                 if (string.IsNullOrWhiteSpace(jsonObj)) continue;
                 try
                 {
-                    MouseMovementEventArgs? m = JsonSerializer.Deserialize<MouseMovementEventArgs>(jsonObj);
-                    if (m != null)
+                    if (jsonObj.Contains("\"ClickType\""))
                     {
-                        if (m.ClickType == 0)
+                        MouseMovementEventArgs? m = JsonSerializer.Deserialize<MouseMovementEventArgs>(jsonObj);
+                        if (m != null)
                         {
-                            MouseService.EstimateVelocity(m);
-                            MouseService.SetCursor();
-                            if (!DisplayEvent.OnScreen())
+                            if (m.ClickType == 0)
                             {
-                                SendTermination();
-                                CloseCurrentClient();
+                                MouseService.EstimateVelocity(m);
+                                MouseService.SetCursor();
+                                if (!DisplayEvent.OnScreen())
+                                {
+                                    SendTermination();
+                                    CloseCurrentClient();
+                                }
+                            }
+                            else
+                            {
+                                MouseService.HandleClick(m.ClickType, m.ScrollSpeed);
                             }
                         }
-                        else
-                        {
-                            MouseService.HandleClick(m.ClickType, m.ScrollSpeed);
-                        }
-                        
                     }
+                    else if (jsonObj.Contains("\"KeyInputType\""))
+                    {
+                        KeyboardInputEventArgs? k = JsonSerializer.Deserialize<KeyboardInputEventArgs>(jsonObj);
+                        if (k != null)
+                        {
+                            Console.WriteLine($"From Client: {k.Key}, {k.KeyInputType}");
+                        }
+                    }
+                    
                 }
                 catch (JsonException ex)
                 {
                     Console.WriteLine($"Error parsing individual JSON object: {ex.Message}");
                     Console.WriteLine($"JSON object: {jsonObj}");
-                    
                 }
             }
-            
         }
         catch (JsonException ex)
         {
