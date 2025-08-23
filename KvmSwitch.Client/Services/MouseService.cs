@@ -8,7 +8,6 @@ namespace services
     public class MouseService : NativeWindow, IDisposable
     {
         public event EventHandler<MouseMovementEventArgs>? MouseMovement;
-        public event EventHandler<KeyboardInputEventArgs>? KeyboardInput;
 
         #region Private Variables
         private const uint RID_INPUT = 0x10000003;
@@ -168,11 +167,7 @@ namespace services
                         else if (header.dwType == RIM_TYPEKEYBOARD)
                         {
                             RAWKEYBOARD keyboardData = Marshal.PtrToStructure<RAWKEYBOARD>(DataPtr);
-                            KeyboardInput?.Invoke(this, new KeyboardInputEventArgs
-                            {
-                                Key = keyboardData.MakeCode,
-                                KeyInputType = keyboardData.Flags,
-                            });
+                            
                         }
                     }
                 }
@@ -196,7 +191,7 @@ namespace services
 
             devices[1].usUsagePage = 0x01;
             devices[1].usUsage = 0x06;
-            devices[1].dwFlags = RIDEV_REMOVE | RIDEV_NOLEGACY;
+            devices[1].dwFlags = RIDEV_REMOVE;
             devices[1].hwndTarget = IntPtr.Zero;
             bool success = RegisterRawInputDevices(devices, 2, (uint)Marshal.SizeOf(typeof(RAWINPUTDEVICE)));
             
@@ -220,6 +215,7 @@ namespace services
     }
     public class SuppressionService : IDisposable
     {
+        public static event EventHandler<KeyboardInputEventArgs>? KeyboardInput;
         private const int WH_MOUSE_LL = 14;
         private const int WH_KEYBOARD_LL = 13;
         private readonly HOOKPROC _mouseProc;
@@ -237,6 +233,15 @@ namespace services
         private static extern IntPtr CallNextHookEx(IntPtr hhk, int nCode, IntPtr wParam, IntPtr lParam);
         [DllImport("kernel32.dll")]
         private static extern IntPtr GetModuleHandle(string lpModuleName);
+        [StructLayout(LayoutKind.Sequential)]
+        private struct KBDLLHOOKSTRUCT
+        {
+            public uint vkCode;
+            public uint scanCode;
+            public uint flags;
+            public uint time;
+            public UIntPtr dwExtraInfo;
+        }
 
         public SuppressionService()
         {
@@ -300,9 +305,16 @@ namespace services
             {
                 if (nCode >= 0)
                 {
+                    KBDLLHOOKSTRUCT kb = Marshal.PtrToStructure<KBDLLHOOKSTRUCT>(lParam);
+
+                    KeyboardInput?.Invoke(null, new KeyboardInputEventArgs
+                    {
+                        Key = (ushort)kb.scanCode,
+                        KeyInputType = (ushort)wParam,
+                    });
                     if (_suppressKeyboard)
-                        Console.WriteLine($"NOT suppressing keyboard input: wParam={wParam}");
-                        //return 1;
+                        return 1;
+                        /*Console.WriteLine($"NOT suppressing keyboard input: wParam={wParam}");*/
                 }
             }
             catch (Exception ex)

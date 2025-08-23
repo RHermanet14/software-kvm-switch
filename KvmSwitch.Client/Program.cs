@@ -27,8 +27,8 @@ namespace Client {
             Console.CancelKeyPress += OnCancelKeyPress; // Append custom function to keyboard interrupt
             mouseTracker = new MouseService();
             mouseTracker.MouseMovement += OnMouseMovement;
-            mouseTracker.KeyboardInput += OnKeyboardInput;
             suppressor = new SuppressionService();
+            SuppressionService.KeyboardInput += OnKeyboardInput;
             if (!mouseTracker.StartTracking())
             {
                 ExitThread();

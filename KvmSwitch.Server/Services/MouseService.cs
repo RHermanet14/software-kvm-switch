@@ -41,6 +41,11 @@ namespace services
         private const uint INPUT_KEYBOARD = 1;
         private const uint KEYEVENTF_SCANCODE = 0x0008;
         private const uint KEYEVENTF_KEYUP = 0x0002;
+        private const int WM_KEYDOWN    = 0x0100;
+        private const int WM_KEYUP      = 0x0101;
+        private const int WM_SYSKEYDOWN = 0x0104;
+        private const int WM_SYSKEYUP   = 0x0105;
+
         [StructLayout(LayoutKind.Sequential)]
         private struct MOUSEINPUT
         {
@@ -165,7 +170,7 @@ namespace services
             INPUT[] input = new INPUT[1];
             input[0].type = INPUT_KEYBOARD;
             input[0].inputUnion.ki.wScan = make;
-            if (flag == 1)
+            if (flag == WM_KEYUP || flag == WM_SYSKEYUP)
                 input[0].inputUnion.ki.dwFlags = KEYEVENTF_SCANCODE | KEYEVENTF_KEYUP;
             else
                 input[0].inputUnion.ki.dwFlags = KEYEVENTF_SCANCODE;
