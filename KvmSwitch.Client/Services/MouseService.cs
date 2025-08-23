@@ -15,6 +15,8 @@ namespace services
         private const uint RIM_TYPEMOUSE = 0;
         private const uint RIM_TYPEKEYBOARD = 1;
         private const uint RIDEV_REMOVE = 0x00000001;
+        private const uint RIDEV_NOLEGACY = 0x00000030;
+
         private const uint RIDEV_INPUTSINK = 0x00000100;
         private const int WM_INPUT = 0x00FF;
         
@@ -154,19 +156,18 @@ namespace services
 
                         if (header.dwType == RIM_TYPEMOUSE)
                         {
-                            // Calculate offset to mouse data (after header)
-                            //int headerSize = Marshal.SizeOf<RAWINPUTHEADER>();
-                            //IntPtr mouseDataPtr = IntPtr.Add(buffer, headerSize);
-
-                            // Read mouse data directly
                             RAWMOUSE mouseData = Marshal.PtrToStructure<RAWMOUSE>(DataPtr);
-
-                            UpdateMovementData(mouseData.usButtonFlags, mouseData.usButtonData, mouseData.lLastX, mouseData.lLastY);
+                            MouseMovement?.Invoke(this, new MouseMovementEventArgs
+                            {
+                                ClickType = mouseData.usButtonFlags,
+                                ScrollSpeed = (short)mouseData.usButtonData,
+                                VelocityX = mouseData.lLastX,
+                                VelocityY = mouseData.lLastY,
+                            });
                         }
                         else if (header.dwType == RIM_TYPEKEYBOARD)
                         {
                             RAWKEYBOARD keyboardData = Marshal.PtrToStructure<RAWKEYBOARD>(DataPtr);
-                            Console.WriteLine($"{keyboardData.MakeCode}, {keyboardData.Flags}");
                             KeyboardInput?.Invoke(this, new KeyboardInputEventArgs
                             {
                                 Key = keyboardData.MakeCode,
@@ -183,25 +184,6 @@ namespace services
             base.WndProc(ref m);
         }
 
-        private void UpdateMovementData(uint flags, ushort data, int deltaX, int deltaY)
-        {
-            DateTime currentTime = DateTime.Now;
-            double timeDelta = (currentTime - _lastUpdateTime).TotalMilliseconds;
-
-            if (timeDelta > 0)
-            {
-                // Fire event
-                MouseMovement?.Invoke(this, new MouseMovementEventArgs
-                {
-                    ClickType = flags,
-                    ScrollSpeed = (short)data,
-                    VelocityX = deltaX,
-                    VelocityY = deltaY,
-                    TimeDelta = timeDelta / 1000,
-                });
-            }
-        }
-
         public bool StopTracking()
         {
             if (!_registered) return true;
@@ -214,7 +196,7 @@ namespace services
 
             devices[1].usUsagePage = 0x01;
             devices[1].usUsage = 0x06;
-            devices[1].dwFlags = RIDEV_REMOVE;
+            devices[1].dwFlags = RIDEV_REMOVE | RIDEV_NOLEGACY;
             devices[1].hwndTarget = IntPtr.Zero;
             bool success = RegisterRawInputDevices(devices, 2, (uint)Marshal.SizeOf(typeof(RAWINPUTDEVICE)));
             
@@ -236,12 +218,16 @@ namespace services
             }
         }
     }
-    public class MouseSuppressionService : IDisposable
+    public class SuppressionService : IDisposable
     {
         private const int WH_MOUSE_LL = 14;
-        private readonly HOOKPROC _proc;
-        private IntPtr _hookID = IntPtr.Zero;
+        private const int WH_KEYBOARD_LL = 13;
+        private readonly HOOKPROC _mouseProc;
+        private readonly HOOKPROC _keyboardProc;
+        private IntPtr _mouseHookID = IntPtr.Zero;
+        private IntPtr _keyboardHookID = IntPtr.Zero;
         private static volatile bool _suppressMouse = false;
+        private static volatile bool _suppressKeyboard = false;
         public delegate IntPtr HOOKPROC(int code, IntPtr wParam, IntPtr lParam);
         [DllImport("user32.dll")]
         private static extern IntPtr SetWindowsHookEx(int idHook, HOOKPROC lpfn, IntPtr hMod, uint dwThreadId);
@@ -252,46 +238,93 @@ namespace services
         [DllImport("kernel32.dll")]
         private static extern IntPtr GetModuleHandle(string lpModuleName);
 
-        public MouseSuppressionService()
+        public SuppressionService()
         {
-            _proc = HookCallback;
-            _hookID = SetHook(_proc);
+            _mouseProc = MouseHookCallback;
+            _keyboardProc = KeyboardHookCallback;
+
+            _mouseHookID = SetMouseHook(_mouseProc);
+            _keyboardHookID = SetKeyboardHook(_keyboardProc);
         }
-        public void StartSuppression() { _suppressMouse = true; }
-        public void StopSuppression() { _suppressMouse = false; }
-        public void Dispose()
-        {
-            if (_hookID != IntPtr.Zero)
-            {
-                UnhookWindowsHookEx(_hookID);
-                _hookID = IntPtr.Zero;
-            }
-        }
-        private IntPtr SetHook(HOOKPROC proc)
+        public void StartSuppression() { _suppressMouse = true; _suppressKeyboard = true; }
+        public void StopSuppression() { _suppressMouse = false; _suppressKeyboard = false; }
+        private IntPtr SetMouseHook(HOOKPROC proc)
         {
             using (Process curProcess = Process.GetCurrentProcess())
             using (ProcessModule curModule = curProcess.MainModule!)
             {
-                return SetWindowsHookEx(WH_MOUSE_LL, proc, GetModuleHandle(curModule.ModuleName!), 0);
+                IntPtr hook = SetWindowsHookEx(WH_MOUSE_LL, proc, 
+                    GetModuleHandle(curModule.ModuleName!), 0); 
+                if (hook == IntPtr.Zero)
+                {
+                    int error = Marshal.GetLastWin32Error();
+                    Console.WriteLine($"Failed to install mouse hook. Error: {error}");
+                } 
+                return hook;
             }
         }
-        private static IntPtr HookCallback(int nCode, IntPtr wParam, IntPtr lParam)
+        private IntPtr SetKeyboardHook(HOOKPROC proc)
+        {
+            using (Process curProcess = Process.GetCurrentProcess())
+            using (ProcessModule curModule = curProcess.MainModule!)
+            {
+                IntPtr hook = SetWindowsHookEx(WH_KEYBOARD_LL, proc, 
+                    GetModuleHandle(curModule.ModuleName!), 0);
+                if (hook == IntPtr.Zero)
+                {
+                    int error = Marshal.GetLastWin32Error();
+                    Console.WriteLine($"Failed to install keyboard hook. Error: {error}");
+                } 
+                return hook;
+            }
+        }
+        private static IntPtr MouseHookCallback(int nCode, IntPtr wParam, IntPtr lParam)
         {
             try
             {
                 if (nCode >= 0)
                 {
                     if (_suppressMouse)
-                    {
                         return 1;
-                    }
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Hook error: {ex.Message}");
+                Console.WriteLine($"Mouse hook error: {ex.Message}");
             }
             return CallNextHookEx(IntPtr.Zero, nCode, wParam, lParam);
+        }
+        private static IntPtr KeyboardHookCallback(int nCode, IntPtr wParam, IntPtr lParam)
+        {
+            try
+            {
+                if (nCode >= 0)
+                {
+                    if (_suppressKeyboard)
+                        Console.WriteLine($"NOT suppressing keyboard input: wParam={wParam}");
+                        //return 1;
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Keyboard hook error: {ex.Message}");
+            }
+            return CallNextHookEx(IntPtr.Zero, nCode, wParam, lParam);
+        }
+    
+        public void Dispose()
+        {     
+            StopSuppression(); 
+            if (_mouseHookID != IntPtr.Zero)
+            {
+                UnhookWindowsHookEx(_mouseHookID);
+                _mouseHookID = IntPtr.Zero;
+            }
+            if (_keyboardHookID != IntPtr.Zero)
+            {
+                UnhookWindowsHookEx(_keyboardHookID);
+                _keyboardHookID = IntPtr.Zero;
+            }
         }
     }
 }

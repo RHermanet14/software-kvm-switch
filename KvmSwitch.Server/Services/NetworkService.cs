@@ -109,7 +109,6 @@ public class NetworkService
                     DisplayEvent.edge = initial.Value.Direction;
                     DisplayEvent.margin = initial.Value.Margin;
                     MouseService.SetInitialCursor(initial.Value.InitialCoords);
-                    //Console.WriteLine($"Initial data received: {DisplayEvent.edge}, {DisplayEvent.margin}");
                     _isConnected = true;
                     return;
                 }
@@ -147,7 +146,6 @@ public class NetworkService
                         KeyboardInputEventArgs? k = JsonSerializer.Deserialize<KeyboardInputEventArgs>(jsonObj);
                         if (k != null)
                         {
-                            Console.WriteLine($"From Client: {k.Key}, {k.KeyInputType}");
                             MouseService.HandleKey(k.Key, k.KeyInputType);
                         }
                     }

@@ -11,7 +11,7 @@ namespace Client {
     public class MouseTrackingContext : ApplicationContext
     {
         private MouseService? mouseTracker;
-        private MouseSuppressionService? mouseSuppressor;
+        private SuppressionService? suppressor;
         private NetworkService? network;
         private volatile bool isTerminating = false;
         public bool Terminate { get; set; } = false;
@@ -28,14 +28,13 @@ namespace Client {
             mouseTracker = new MouseService();
             mouseTracker.MouseMovement += OnMouseMovement;
             mouseTracker.KeyboardInput += OnKeyboardInput;
-            mouseSuppressor = new MouseSuppressionService();
+            suppressor = new SuppressionService();
             if (!mouseTracker.StartTracking())
             {
                 ExitThread();
                 return;
             }
-            mouseSuppressor.StartSuppression();    
-            
+            suppressor.StartSuppression();
             MonitorTermination();
         }
         private void MonitorTermination()
@@ -83,10 +82,10 @@ namespace Client {
             if (isTerminating)
                 return;
             isTerminating = true;
-            mouseSuppressor?.StopSuppression();
+            suppressor?.StopSuppression();
 
             mouseTracker?.Dispose();
-            mouseSuppressor?.Dispose();
+            suppressor?.Dispose();
 
             if (network != null)
                 network.Disconnect();

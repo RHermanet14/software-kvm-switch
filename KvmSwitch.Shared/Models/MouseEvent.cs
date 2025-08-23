@@ -37,7 +37,6 @@ namespace Shared
         public short ScrollSpeed { get; set; }
         public int VelocityX { get; set; }
         public int VelocityY { get; set; }
-        public double TimeDelta { get; set; }
     }
     public class KeyboardInputEventArgs : EventArgs
     {
