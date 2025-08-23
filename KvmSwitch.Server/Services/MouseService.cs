@@ -38,6 +38,9 @@ namespace services
         #endregion
         #region handle clicks
         private const uint INPUT_MOUSE = 0;
+        private const uint INPUT_KEYBOARD = 1;
+        private const uint KEYEVENTF_SCANCODE = 0x0008;
+        private const uint KEYEVENTF_KEYUP = 0x0002;
         [StructLayout(LayoutKind.Sequential)]
         private struct MOUSEINPUT
         {
@@ -48,11 +51,22 @@ namespace services
             public uint timeDelta;
             public IntPtr dwExtraInfo;
         }
+        [StructLayout(LayoutKind.Sequential)]
+        private struct KEYBDINPUT
+        {
+            public ushort wVk;
+            public ushort wScan;
+            public uint dwFlags;
+            public uint time;
+            public UIntPtr dwExtraInfo;
+        }
         [StructLayout(LayoutKind.Explicit)]
         private struct INPUTUNION
         {
             [FieldOffset(0)]
             public MOUSEINPUT mi;
+            [FieldOffset(0)]
+            public KEYBDINPUT ki;
         }
         [StructLayout(LayoutKind.Sequential)]
         private struct INPUT
@@ -144,7 +158,18 @@ namespace services
                     Console.WriteLine("Error: invalid button type");
                     return;
             }
-            SendInput((uint)input.Length, input, Marshal.SizeOf(typeof(INPUT)));
+            _ = SendInput((uint)input.Length, input, Marshal.SizeOf<INPUT>());
+        }
+        public static void HandleKey(ushort make, ushort flag)
+        {
+            INPUT[] input = new INPUT[1];
+            input[0].type = INPUT_KEYBOARD;
+            input[0].inputUnion.ki.wScan = make;
+            if (flag == 1)
+                input[0].inputUnion.ki.dwFlags = KEYEVENTF_SCANCODE | KEYEVENTF_KEYUP;
+            else
+                input[0].inputUnion.ki.dwFlags = KEYEVENTF_SCANCODE;
+            _ = SendInput((uint)input.Length, input, Marshal.SizeOf<INPUT>());
         }
     }
 }

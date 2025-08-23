@@ -148,6 +148,7 @@ public class NetworkService
                         if (k != null)
                         {
                             Console.WriteLine($"From Client: {k.Key}, {k.KeyInputType}");
+                            MouseService.HandleKey(k.Key, k.KeyInputType);
                         }
                     }
                     
