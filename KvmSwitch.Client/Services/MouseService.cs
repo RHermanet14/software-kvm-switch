@@ -12,16 +12,11 @@ namespace services
         #region Private Variables
         private const uint RID_INPUT = 0x10000003;
         private const uint RIM_TYPEMOUSE = 0;
-        private const uint RIM_TYPEKEYBOARD = 1;
         private const uint RIDEV_REMOVE = 0x00000001;
-        private const uint RIDEV_NOLEGACY = 0x00000030;
-
         private const uint RIDEV_INPUTSINK = 0x00000100;
         private const int WM_INPUT = 0x00FF;
-        
         private bool _registered = false;
         private bool _disposed = false;
-        private DateTime _lastUpdateTime = DateTime.Now;
         #endregion
         #region Structs
 
@@ -60,18 +55,6 @@ namespace services
         {
             public RAWINPUTHEADER header;
             public RAWMOUSE mouse; // union { RAWMOUSE mouse; RAWKEYBOARD keyboard; RAWHID hid; }
-            public RAWKEYBOARD keyboard;
-        }
-
-        [StructLayout(LayoutKind.Sequential)]
-        public struct RAWKEYBOARD
-        {
-            public ushort MakeCode;
-            public ushort Flags;
-            public ushort Reserved;
-            public ushort VKey;
-            public uint Message;
-            public ulong ExtraInformation;
         }
         #endregion
 
@@ -106,17 +89,13 @@ namespace services
         {
             if (_registered)
                 return true;
-            RAWINPUTDEVICE[] devices = new RAWINPUTDEVICE[2];
+            RAWINPUTDEVICE[] devices = new RAWINPUTDEVICE[1];
             devices[0].usUsagePage = 0x01;
             devices[0].usUsage = 0x02;
             devices[0].dwFlags = RIDEV_INPUTSINK;
             devices[0].hwndTarget = Handle;
 
-            devices[1].usUsagePage = 0x01;
-            devices[1].usUsage = 0x06;
-            devices[1].dwFlags = RIDEV_INPUTSINK;
-            devices[1].hwndTarget = Handle;
-            if (!RegisterRawInputDevices(devices, 2, (uint)Marshal.SizeOf(typeof(RAWINPUTDEVICE))))
+            if (!RegisterRawInputDevices(devices, 1, (uint)Marshal.SizeOf(typeof(RAWINPUTDEVICE))))
             {
                 Console.WriteLine("Failed to register device");
                 return false;
@@ -164,11 +143,6 @@ namespace services
                                 VelocityY = mouseData.lLastY,
                             });
                         }
-                        else if (header.dwType == RIM_TYPEKEYBOARD)
-                        {
-                            RAWKEYBOARD keyboardData = Marshal.PtrToStructure<RAWKEYBOARD>(DataPtr);
-                            
-                        }
                     }
                 }
                 finally
@@ -183,23 +157,15 @@ namespace services
         {
             if (!_registered) return true;
 
-            RAWINPUTDEVICE[] devices = new RAWINPUTDEVICE[2];
+            RAWINPUTDEVICE[] devices = new RAWINPUTDEVICE[1];
             devices[0].usUsagePage = 0x01;
             devices[0].usUsage = 0x02;
             devices[0].dwFlags = RIDEV_REMOVE;
             devices[0].hwndTarget = IntPtr.Zero;
 
-            devices[1].usUsagePage = 0x01;
-            devices[1].usUsage = 0x06;
-            devices[1].dwFlags = RIDEV_REMOVE;
-            devices[1].hwndTarget = IntPtr.Zero;
-            bool success = RegisterRawInputDevices(devices, 2, (uint)Marshal.SizeOf(typeof(RAWINPUTDEVICE)));
-            
+            bool success = RegisterRawInputDevices(devices, 1, (uint)Marshal.SizeOf(typeof(RAWINPUTDEVICE)));
             if (success)
-            {
                 _registered = false;
-            }
-
             return success;
         }
         public void Dispose()

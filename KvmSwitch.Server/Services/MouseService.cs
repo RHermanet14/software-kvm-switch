@@ -41,9 +41,7 @@ namespace services
         private const uint INPUT_KEYBOARD = 1;
         private const uint KEYEVENTF_SCANCODE = 0x0008;
         private const uint KEYEVENTF_KEYUP = 0x0002;
-        private const int WM_KEYDOWN    = 0x0100;
         private const int WM_KEYUP      = 0x0101;
-        private const int WM_SYSKEYDOWN = 0x0104;
         private const int WM_SYSKEYUP   = 0x0105;
 
         [StructLayout(LayoutKind.Sequential)]
