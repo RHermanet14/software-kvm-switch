@@ -1,4 +1,4 @@
-﻿namespace KvmSwitch.ClientUI
+﻿namespace ClientUI
 {
     partial class ClientUI
     {
@@ -67,6 +67,7 @@
             button1.TabIndex = 2;
             button1.Text = "Start Client";
             button1.UseVisualStyleBackColor = true;
+            button1.Click += button1_Click;
             // 
             // checkBox1
             // 
@@ -77,6 +78,7 @@
             checkBox1.TabIndex = 3;
             checkBox1.Text = "Save IP";
             checkBox1.UseVisualStyleBackColor = true;
+            checkBox1.CheckedChanged += checkBox1_CheckedChanged;
             // 
             // label2
             // 
@@ -115,12 +117,13 @@
             button2.TabIndex = 7;
             button2.Text = "Stop Client";
             button2.UseVisualStyleBackColor = true;
+            button2.Click += button2_Click;
             // 
             // ClientUI
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(391, 316);
+            ClientSize = new Size(352, 316);
             Controls.Add(button2);
             Controls.Add(checkBox2);
             Controls.Add(textBox2);

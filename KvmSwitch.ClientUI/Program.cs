@@ -1,4 +1,4 @@
-namespace KvmSwitch.ClientUI
+namespace ClientUI
 {
     internal static class Program
     {
