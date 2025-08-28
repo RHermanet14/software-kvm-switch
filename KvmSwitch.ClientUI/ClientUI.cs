@@ -4,6 +4,7 @@ namespace ClientUI
 {
     public partial class ClientUI : Form
     {
+        private Process? _clientProcess;
         public ClientUI()
         {
             InitializeComponent();
@@ -70,7 +71,7 @@ namespace ClientUI
                     UseShellExecute = false,
                     CreateNoWindow = true,
                 };
-                Process.Start(startInfo);
+                _clientProcess = Process.Start(startInfo);
             }
 
         }
@@ -79,6 +80,22 @@ namespace ClientUI
         {
             button1.Enabled = true;
             button2.Enabled = false;
+            KillClient();
+        }
+
+        protected override void OnFormClosing(FormClosingEventArgs e)
+        {
+            base.OnFormClosing(e);
+            KillClient();
+        }
+        private void KillClient()
+        {
+            if (_clientProcess != null && !_clientProcess.HasExited)
+            {
+                _clientProcess.Kill();
+                _clientProcess.Dispose();
+                _clientProcess = null;
+            }
         }
     }
 }
