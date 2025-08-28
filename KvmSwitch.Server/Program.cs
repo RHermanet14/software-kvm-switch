@@ -30,6 +30,7 @@ namespace Server
         public void KeyboardInterrupt()
         {
             Console.WriteLine("Terminating Server");
+            network?.SendTermination();
             network?.Disconnect();
         }
     }
