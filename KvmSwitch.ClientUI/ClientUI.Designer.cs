@@ -28,126 +28,176 @@
         /// </summary>
         private void InitializeComponent()
         {
-            textBox1 = new TextBox();
-            label1 = new Label();
-            button1 = new Button();
-            checkBox1 = new CheckBox();
-            label2 = new Label();
-            textBox2 = new TextBox();
-            checkBox2 = new CheckBox();
-            button2 = new Button();
+            components = new System.ComponentModel.Container();
+            IPTextBox = new TextBox();
+            IPLabel = new Label();
+            StartButton = new Button();
+            IPCheckBox = new CheckBox();
+            PortLabel = new Label();
+            PortTextBox = new TextBox();
+            PortCheckBox = new CheckBox();
+            StopButton = new Button();
+            MarginLabel = new Label();
+            MarginTextBox = new TextBox();
+            toolTip1 = new ToolTip(components);
+            EdgeLabel = new Label();
+            EdgeComboBox = new ComboBox();
             SuspendLayout();
             // 
-            // textBox1
+            // IPTextBox
             // 
-            textBox1.Font = new Font("Segoe UI", 12F, FontStyle.Regular, GraphicsUnit.Point, 0);
-            textBox1.Location = new Point(141, 44);
-            textBox1.Name = "textBox1";
-            textBox1.Size = new Size(187, 29);
-            textBox1.TabIndex = 0;
-            textBox1.TextChanged += textBox1_TextChanged;
+            IPTextBox.Font = new Font("Segoe UI", 12F, FontStyle.Regular, GraphicsUnit.Point, 0);
+            IPTextBox.Location = new Point(141, 44);
+            IPTextBox.Name = "IPTextBox";
+            IPTextBox.Size = new Size(187, 29);
+            IPTextBox.TabIndex = 0;
             // 
-            // label1
+            // IPLabel
             // 
-            label1.AutoSize = true;
-            label1.BackColor = Color.Transparent;
-            label1.Font = new Font("Segoe UI", 12F, FontStyle.Regular, GraphicsUnit.Point, 0);
-            label1.Location = new Point(12, 47);
-            label1.Name = "label1";
-            label1.Size = new Size(123, 21);
-            label1.TabIndex = 1;
-            label1.Text = "Enter IP Address";
-            label1.Click += label1_Click;
+            IPLabel.AutoSize = true;
+            IPLabel.BackColor = Color.Transparent;
+            IPLabel.Font = new Font("Segoe UI", 12F, FontStyle.Regular, GraphicsUnit.Point, 0);
+            IPLabel.Location = new Point(12, 47);
+            IPLabel.Name = "IPLabel";
+            IPLabel.Size = new Size(123, 21);
+            IPLabel.TabIndex = 1;
+            IPLabel.Text = "Enter IP Address";
             // 
-            // button1
+            // StartButton
             // 
-            button1.Location = new Point(236, 190);
-            button1.Name = "button1";
-            button1.Size = new Size(92, 23);
-            button1.TabIndex = 2;
-            button1.Text = "Start Client";
-            button1.UseVisualStyleBackColor = true;
-            button1.Click += button1_Click;
+            StartButton.Location = new Point(236, 186);
+            StartButton.Name = "StartButton";
+            StartButton.Size = new Size(92, 23);
+            StartButton.TabIndex = 2;
+            StartButton.Text = "Start Client";
+            StartButton.UseVisualStyleBackColor = true;
+            StartButton.Click += button1_Click;
             // 
-            // checkBox1
+            // IPCheckBox
             // 
-            checkBox1.AutoSize = true;
-            checkBox1.Location = new Point(141, 79);
-            checkBox1.Name = "checkBox1";
-            checkBox1.Size = new Size(63, 19);
-            checkBox1.TabIndex = 3;
-            checkBox1.Text = "Save IP";
-            checkBox1.UseVisualStyleBackColor = true;
-            checkBox1.CheckedChanged += checkBox1_CheckedChanged;
+            IPCheckBox.AutoSize = true;
+            IPCheckBox.Location = new Point(141, 79);
+            IPCheckBox.Name = "IPCheckBox";
+            IPCheckBox.Size = new Size(63, 19);
+            IPCheckBox.TabIndex = 3;
+            IPCheckBox.Text = "Save IP";
+            IPCheckBox.UseVisualStyleBackColor = true;
             // 
-            // label2
+            // PortLabel
             // 
-            label2.AutoSize = true;
-            label2.Font = new Font("Segoe UI", 12F);
-            label2.Location = new Point(12, 112);
-            label2.Name = "label2";
-            label2.Size = new Size(78, 21);
-            label2.TabIndex = 4;
-            label2.Text = "Enter Port";
-            label2.Click += label2_Click;
+            PortLabel.AutoSize = true;
+            PortLabel.Font = new Font("Segoe UI", 12F);
+            PortLabel.Location = new Point(12, 112);
+            PortLabel.Name = "PortLabel";
+            PortLabel.Size = new Size(78, 21);
+            PortLabel.TabIndex = 4;
+            PortLabel.Text = "Enter Port";
             // 
-            // textBox2
+            // PortTextBox
             // 
-            textBox2.Location = new Point(141, 114);
-            textBox2.Name = "textBox2";
-            textBox2.Size = new Size(187, 23);
-            textBox2.TabIndex = 5;
-            textBox2.TextChanged += textBox2_TextChanged;
+            PortTextBox.Location = new Point(141, 114);
+            PortTextBox.Name = "PortTextBox";
+            PortTextBox.Size = new Size(187, 23);
+            PortTextBox.TabIndex = 5;
             // 
-            // checkBox2
+            // PortCheckBox
             // 
-            checkBox2.AutoSize = true;
-            checkBox2.Location = new Point(141, 143);
-            checkBox2.Name = "checkBox2";
-            checkBox2.Size = new Size(75, 19);
-            checkBox2.TabIndex = 6;
-            checkBox2.Text = "Save Port";
-            checkBox2.UseVisualStyleBackColor = true;
+            PortCheckBox.AutoSize = true;
+            PortCheckBox.Location = new Point(141, 143);
+            PortCheckBox.Name = "PortCheckBox";
+            PortCheckBox.Size = new Size(75, 19);
+            PortCheckBox.TabIndex = 6;
+            PortCheckBox.Text = "Save Port";
+            PortCheckBox.UseVisualStyleBackColor = true;
             // 
-            // button2
+            // StopButton
             // 
-            button2.Location = new Point(236, 232);
-            button2.Name = "button2";
-            button2.Size = new Size(92, 23);
-            button2.TabIndex = 7;
-            button2.Text = "Stop Client";
-            button2.UseVisualStyleBackColor = true;
-            button2.Click += button2_Click;
+            StopButton.Location = new Point(236, 232);
+            StopButton.Name = "StopButton";
+            StopButton.Size = new Size(92, 23);
+            StopButton.TabIndex = 7;
+            StopButton.Text = "Stop Client";
+            StopButton.UseVisualStyleBackColor = true;
+            StopButton.Click += button2_Click;
+            // 
+            // MarginLabel
+            // 
+            MarginLabel.AutoSize = true;
+            MarginLabel.Location = new Point(12, 190);
+            MarginLabel.Name = "MarginLabel";
+            MarginLabel.Size = new Size(45, 15);
+            MarginLabel.TabIndex = 8;
+            MarginLabel.Text = "Margin";
+            toolTip1.SetToolTip(MarginLabel, "The number of pixels away from the edge of the screen it will connect to the server.");
+            // 
+            // MarginTextBox
+            // 
+            MarginTextBox.Location = new Point(63, 187);
+            MarginTextBox.Name = "MarginTextBox";
+            MarginTextBox.Size = new Size(100, 23);
+            MarginTextBox.TabIndex = 9;
+            MarginTextBox.Text = "1";
+            MarginTextBox.KeyPress += textBox3_KeyPress;
+            // 
+            // EdgeLabel
+            // 
+            EdgeLabel.AutoSize = true;
+            EdgeLabel.Location = new Point(12, 236);
+            EdgeLabel.Name = "EdgeLabel";
+            EdgeLabel.Size = new Size(33, 15);
+            EdgeLabel.TabIndex = 11;
+            EdgeLabel.Text = "Edge";
+            toolTip1.SetToolTip(EdgeLabel, "Which side to drag the mouse towards to connect to the server.");
+            // 
+            // EdgeComboBox
+            // 
+            EdgeComboBox.FormattingEnabled = true;
+            EdgeComboBox.Location = new Point(63, 233);
+            EdgeComboBox.Name = "EdgeComboBox";
+            EdgeComboBox.Size = new Size(100, 23);
+            EdgeComboBox.TabIndex = 10;
+            EdgeComboBox.Text = "None";
+            EdgeComboBox.SelectedValueChanged += EdgeComboBox_SelectedValueChanged;
             // 
             // ClientUI
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(352, 316);
-            Controls.Add(button2);
-            Controls.Add(checkBox2);
-            Controls.Add(textBox2);
-            Controls.Add(label2);
-            Controls.Add(checkBox1);
-            Controls.Add(button1);
-            Controls.Add(label1);
-            Controls.Add(textBox1);
+            ClientSize = new Size(873, 415);
+            Controls.Add(EdgeLabel);
+            Controls.Add(EdgeComboBox);
+            Controls.Add(MarginTextBox);
+            Controls.Add(MarginLabel);
+            Controls.Add(StopButton);
+            Controls.Add(PortCheckBox);
+            Controls.Add(PortTextBox);
+            Controls.Add(PortLabel);
+            Controls.Add(IPCheckBox);
+            Controls.Add(StartButton);
+            Controls.Add(IPLabel);
+            Controls.Add(IPTextBox);
             Name = "ClientUI";
             Text = "Client Interface";
             Load += ClientUI_Load;
+            Paint += ClientUI_Paint;
             ResumeLayout(false);
             PerformLayout();
         }
 
         #endregion
 
-        private TextBox textBox1;
-        private Label label1;
-        private Button button1;
-        private CheckBox checkBox1;
-        private Label label2;
-        private TextBox textBox2;
-        private CheckBox checkBox2;
-        private Button button2;
+        private TextBox IPTextBox;
+        private Label IPLabel;
+        private Button StartButton;
+        private CheckBox IPCheckBox;
+        private Label PortLabel;
+        private TextBox PortTextBox;
+        private CheckBox PortCheckBox;
+        private Button StopButton;
+        private Label MarginLabel;
+        private TextBox MarginTextBox;
+        private ToolTip toolTip1;
+        private ComboBox EdgeComboBox;
+        private Label EdgeLabel;
     }
 }
