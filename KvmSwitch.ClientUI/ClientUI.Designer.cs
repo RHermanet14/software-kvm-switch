@@ -71,7 +71,7 @@
             StartButton.TabIndex = 2;
             StartButton.Text = "Start Client";
             StartButton.UseVisualStyleBackColor = true;
-            StartButton.Click += button1_Click;
+            StartButton.Click += StartButtonClick;
             // 
             // IPCheckBox
             // 
@@ -118,7 +118,7 @@
             StopButton.TabIndex = 7;
             StopButton.Text = "Stop Client";
             StopButton.UseVisualStyleBackColor = true;
-            StopButton.Click += button2_Click;
+            StopButton.Click += StopButtonClick;
             // 
             // MarginLabel
             // 
@@ -137,7 +137,7 @@
             MarginTextBox.Size = new Size(100, 23);
             MarginTextBox.TabIndex = 9;
             MarginTextBox.Text = "1";
-            MarginTextBox.KeyPress += textBox3_KeyPress;
+            MarginTextBox.KeyPress += MarginKeyPress;
             // 
             // EdgeLabel
             // 

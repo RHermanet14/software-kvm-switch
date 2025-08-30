@@ -6,4 +6,16 @@ namespace Shared
         public int Margin { get; set; } = m;
         public Point InitialCoords { get; set; } = p;
     }
+    public class MouseMovementEventArgs : EventArgs
+    {
+        public uint ClickType { get; set; }
+        public short ScrollSpeed { get; set; }
+        public int VelocityX { get; set; }
+        public int VelocityY { get; set; }
+    }
+    public class KeyboardInputEventArgs : EventArgs
+    {
+        public ushort Key { get; set; }
+        public ushort KeyInputType { get; set; }
+    }
 }

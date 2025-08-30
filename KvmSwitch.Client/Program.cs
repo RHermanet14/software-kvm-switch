@@ -15,11 +15,11 @@ namespace Client {
         private NetworkService? network;
         private volatile bool isTerminating = false;
         public bool Terminate { get; set; } = false;
-        public MouseTrackingContext(string ip, Dir dir, int margin)
+        public MouseTrackingContext(string ip, int port, DisplayEvent display)
         {
             network = new NetworkService(ip);
 
-            if (!network.Connect(!dir, margin))
+            if (!network.Connect(port, display))
             {
                 ExitThread();
                 Environment.Exit(0);
@@ -87,8 +87,7 @@ namespace Client {
             mouseTracker?.Dispose();
             suppressor?.Dispose();
 
-            if (network != null)
-                network.Disconnect();
+            network?.Disconnect();
             ExitThread();
         }
     }
@@ -98,26 +97,42 @@ namespace Client {
         [STAThread]
         static void Main(string[] args)
         {
-            DisplayEvent.margin = 1;
-            DisplayEvent.edge = Direction.Left;
+            DisplayEvent display;
+            string ip;
+            int port;
+            if (args.Length > 0 && args.Length % 4 == 0)
+            {
+                ip = args[0];
+                _ = int.TryParse(args[1], out port);
+                _ = int.TryParse(args[2], out int edge);
+                _ = int.TryParse(args[3], out int margin);
+                display = new((Direction)edge, margin);
+            }
+            else
+            {
+                var config = new ConfigurationBuilder()
+                .AddUserSecrets<Program>()
+                .Build();
+                ip = config["IP"] ?? throw new InvalidOperationException("Missing IP secret");
+                port = 11111;
+                display = new(Direction.Left, 1);
+            }
+            
             DisplayEvent.GetScreenDimensions();
-            var config = new ConfigurationBuilder()
-            .AddUserSecrets<Program>()
-            .Build();
-            string ip = config["IP"] ?? throw new InvalidOperationException("Missing IP secret");
+
+            Console.WriteLine($"{ip}\n{port}\n{display.edge}\n{display.margin}\n");
+
             while (true)
             {
-
-                if (!DisplayEvent.OnScreen())
+                if (!display.OnScreen())
                 {
-                    Application.Run(new MouseTrackingContext(ip, DisplayEvent.edge, DisplayEvent.margin));
+                    Application.Run(new MouseTrackingContext(ip, port, display));
                     Thread.Sleep(500);
                 }
                 else
                 {
                     Thread.Sleep(50);
                 }
-                    
             }
                  
         }

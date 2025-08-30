@@ -181,6 +181,7 @@ namespace services
     }
     public class SuppressionService : IDisposable
     {
+        #region variables
         public static event EventHandler<KeyboardInputEventArgs>? KeyboardInput;
         private const int WH_MOUSE_LL = 14;
         private const int WH_KEYBOARD_LL = 13;
@@ -208,7 +209,7 @@ namespace services
             public uint time;
             public UIntPtr dwExtraInfo;
         }
-
+        #endregion
         public SuppressionService()
         {
             _mouseProc = MouseHookCallback;
@@ -221,18 +222,16 @@ namespace services
         public void StopSuppression() { _suppressMouse = false; _suppressKeyboard = false; }
         private IntPtr SetMouseHook(HOOKPROC proc)
         {
-            using (Process curProcess = Process.GetCurrentProcess())
-            using (ProcessModule curModule = curProcess.MainModule!)
+            using Process curProcess = Process.GetCurrentProcess();
+            using ProcessModule curModule = curProcess.MainModule!;
+            IntPtr hook = SetWindowsHookEx(WH_MOUSE_LL, proc,
+                GetModuleHandle(curModule.ModuleName!), 0);
+            if (hook == IntPtr.Zero)
             {
-                IntPtr hook = SetWindowsHookEx(WH_MOUSE_LL, proc, 
-                    GetModuleHandle(curModule.ModuleName!), 0); 
-                if (hook == IntPtr.Zero)
-                {
-                    int error = Marshal.GetLastWin32Error();
-                    Console.WriteLine($"Failed to install mouse hook. Error: {error}");
-                } 
-                return hook;
+                int error = Marshal.GetLastWin32Error();
+                Console.WriteLine($"Failed to install mouse hook. Error: {error}");
             }
+            return hook;
         }
         private IntPtr SetKeyboardHook(HOOKPROC proc)
         {

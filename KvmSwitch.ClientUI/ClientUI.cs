@@ -25,7 +25,7 @@ namespace ClientUI
             PortTextBox.Text = Properties.Settings.Default.Port;
         }
 
-        private void button1_Click(object sender, EventArgs e)
+        private void StartButtonClick(object sender, EventArgs e)
         {
             if (string.IsNullOrEmpty(IPTextBox.Text))
             {
@@ -48,18 +48,22 @@ namespace ClientUI
                 Properties.Settings.Default.Save();
                 StartButton.Enabled = false;
                 StopButton.Enabled = true;
-                ProcessStartInfo startInfo = new ProcessStartInfo
+                ProcessStartInfo startInfo = new()
                 {
                     FileName = "KvmSwitch.Client.exe",
-                    UseShellExecute = false,
-                    CreateNoWindow = true,
+                    //UseShellExecute = false,
+                    //CreateNoWindow = true,
                 };
+                startInfo.ArgumentList.Add(IPTextBox.Text);
+                startInfo.ArgumentList.Add(PortTextBox.Text);
+                startInfo.ArgumentList.Add(((int)dir).ToString());
+                startInfo.ArgumentList.Add(MarginTextBox.Text);
                 _clientProcess = Process.Start(startInfo);
             }
 
         }
 
-        private void button2_Click(object sender, EventArgs e)
+        private void StopButtonClick(object sender, EventArgs e)
         {
             StartButton.Enabled = true;
             StopButton.Enabled = false;
@@ -81,7 +85,7 @@ namespace ClientUI
             }
         }
 
-        private void textBox3_KeyPress(object sender, KeyPressEventArgs e)
+        private void MarginKeyPress(object sender, KeyPressEventArgs e)
         {
             if (!char.IsDigit(e.KeyChar) && e.KeyChar != 8) // char 8 = Backspace
             {

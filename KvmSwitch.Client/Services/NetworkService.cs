@@ -16,16 +16,16 @@ namespace services
             serverIP = ip;
         }
 
-        public bool Connect(Direction direction, int margin)
+        public bool Connect(int port, DisplayEvent d)
         {
             try
             {
                 IPHostEntry ipHost = Dns.GetHostEntry(Dns.GetHostName());
                 IPAddress ipAddr = IPAddress.Parse(serverIP);
-                IPEndPoint remoteEndPoint = new IPEndPoint(ipAddr, 11111);
+                IPEndPoint remoteEndPoint = new(ipAddr, port);
                 clientSocket = new Socket(ipAddr.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
                 clientSocket.Connect(remoteEndPoint);
-                var m = new InitialMouseData(direction, margin, DisplayEvent.StartingPoint());
+                var m = new InitialMouseData(!(Dir)d.edge, d.margin, d.StartingPoint());
                 byte[] messageSent = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(m));
                 int byteSent = clientSocket.Send(messageSent);
                 isConnected = true;

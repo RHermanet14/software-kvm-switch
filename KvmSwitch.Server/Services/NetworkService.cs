@@ -12,6 +12,7 @@ public class NetworkService
 {
     private Socket? _listener;
     private Socket? _currentClient;
+    private DisplayEvent? _displayArgs;
     private const int Port = 11111;
     private const int BufferSize = 1024;
     private bool _isConnected = false;
@@ -106,8 +107,8 @@ public class NetworkService
                 InitialMouseData? initial = JsonSerializer.Deserialize<InitialMouseData>(jsonString);
                 if (initial != null)
                 {
-                    DisplayEvent.edge = initial.Value.Direction;
-                    DisplayEvent.margin = initial.Value.Margin;
+                    _displayArgs = new(initial.Value.Direction, initial.Value.Margin);
+                    
                     MouseService.SetInitialCursor(initial.Value.InitialCoords);
                     _isConnected = true;
                     return;
@@ -129,7 +130,7 @@ public class NetworkService
                             {
                                 MouseService.EstimateVelocity(m);
                                 MouseService.SetCursor();
-                                if (!DisplayEvent.OnScreen())
+                                if (_displayArgs != null && !_displayArgs.OnScreen()) // maybe move null check
                                 {
                                     SendTermination();
                                     CloseCurrentClient();
@@ -210,11 +211,11 @@ public class NetworkService
 
     public void SendTermination()
     {
-        if (_currentClient == null)
+        if (_currentClient == null || _displayArgs == null)
             return;
         try
         {
-            Point p = DisplayEvent.StartingPoint();
+            Point p = _displayArgs.StartingPoint();
             byte[] messageSent = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(p));
             int byteSent = _currentClient.Send(messageSent);
         }

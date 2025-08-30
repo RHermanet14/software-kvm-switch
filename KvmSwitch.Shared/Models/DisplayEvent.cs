@@ -22,12 +22,13 @@ namespace Shared
         public static implicit operator Dir(Direction d) => new Dir(d);
         public static implicit operator Direction(Dir d) => d.Side;
     }
-    public static class DisplayEvent
+    public class DisplayEvent(Direction d, int m)
     {
-        public static int margin { get; set; } = 10;
+        public int margin { get; set; } = m;
+        public Direction edge { get; set; } = d;
         private static int width { get; set; } = -1;
         private static int height { get; set; } = -1;
-        public static Direction edge { get; set; } = Direction.None;
+
         public static (int width, int height) GetScreenDimensions()
         {
             if (width != -1 && height != -1)
@@ -39,7 +40,7 @@ namespace Shared
             width = screenBounds.Width; height = screenBounds.Height;
             return (screenBounds.Width, screenBounds.Height);
         }
-        public static bool OnScreen()
+        public bool OnScreen()
         {
             switch (edge)
             {
@@ -63,21 +64,16 @@ namespace Shared
                     return false;
             }
         }
-        public static Point StartingPoint() // Gets the starting point of the other screen, assuming its edge is opposite of the current screen
+        public Point StartingPoint() // Gets the starting point of the other screen, assuming its edge is opposite of the current screen
         {
-            switch (edge)
+            return edge switch
             {
-                case Direction.Up:
-                    return new(MouseEvent.GetX(), height - margin);
-                case Direction.Down:
-                    return new(MouseEvent.GetX(), margin);
-                case Direction.Left:
-                    return new(width - margin, MouseEvent.GetY()); // opposite x, same y
-                case Direction.Right:
-                    return new(margin, MouseEvent.GetY());
-                default:
-                    return new(0, 0);
-            }
+                Direction.Up => new(MouseEvent.GetX(), height - margin),
+                Direction.Down => new(MouseEvent.GetX(), margin),
+                Direction.Left => new(width - margin, MouseEvent.GetY()),// opposite x, same y
+                Direction.Right => new(margin, MouseEvent.GetY()),
+                _ => new(0, 0),
+            };
         }
         public static void SetCursor(Point p)
         {
