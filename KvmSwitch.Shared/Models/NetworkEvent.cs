@@ -18,4 +18,10 @@ namespace Shared
         public ushort Key { get; set; }
         public ushort KeyInputType { get; set; }
     }
+    public class ConnectInfo(string ip, int port, Direction dir, int border)
+    {
+        public string IP { get; set; } = ip;
+        public int Port { get; set; } = port;
+        public DisplayEvent Display = new(dir, border);
+    }
 }

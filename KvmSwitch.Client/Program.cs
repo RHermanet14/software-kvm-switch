@@ -15,11 +15,11 @@ namespace Client {
         private NetworkService? network;
         private volatile bool isTerminating = false;
         public bool Terminate { get; set; } = false;
-        public MouseTrackingContext(string ip, int port, DisplayEvent display)
+        public MouseTrackingContext(ConnectInfo c)
         {
-            network = new NetworkService(ip);
+            network = new NetworkService(c.IP);
 
-            if (!network.Connect(port, display))
+            if (!network.Connect(c.Port, c.Display))
             {
                 ExitThread();
                 Environment.Exit(0);
@@ -97,16 +97,34 @@ namespace Client {
         [STAThread]
         static void Main(string[] args)
         {
-            DisplayEvent display;
             string ip;
-            int port;
+            DisplayEvent.GetScreenDimensions();
             if (args.Length > 0 && args.Length % 4 == 0)
             {
-                ip = args[0];
-                _ = int.TryParse(args[1], out port);
-                _ = int.TryParse(args[2], out int edge);
-                _ = int.TryParse(args[3], out int margin);
-                display = new((Direction)edge, margin);
+                ConnectInfo[] c = new ConnectInfo[4];
+                int count = 0;
+                for (int i = 0; i < args.Length / 4; i++)
+                {
+                    ip = args[i * 4];
+                    _ = int.TryParse(args[(i * 4) + 1], out int port);
+                    _ = int.TryParse(args[(i * 4) + 2], out int edge);
+                    _ = int.TryParse(args[(i * 4) + 3], out int margin);
+                    c[i] = new ConnectInfo(ip, port, (Direction)edge, margin);
+                    count++;
+                }
+
+                while (true)
+                {
+                    for (int i = 0; i < count; i++)
+                    {
+                        if (!c[i].Display.OnScreen())
+                        {
+                            Application.Run(new MouseTrackingContext(c[i]));
+                            Thread.Sleep(450);
+                        }
+                    }
+                    Thread.Sleep(50);
+                }   
             }
             else
             {
@@ -114,27 +132,20 @@ namespace Client {
                 .AddUserSecrets<Program>()
                 .Build();
                 ip = config["IP"] ?? throw new InvalidOperationException("Missing IP secret");
-                port = 11111;
-                display = new(Direction.Left, 1);
-            }
-            
-            DisplayEvent.GetScreenDimensions();
-
-            Console.WriteLine($"{ip}\n{port}\n{display.edge}\n{display.margin}\n");
-
-            while (true)
-            {
-                if (!display.OnScreen())
+                ConnectInfo c = new(ip, 11111, Direction.Left, 1);
+                while (true)
                 {
-                    Application.Run(new MouseTrackingContext(ip, port, display));
-                    Thread.Sleep(500);
-                }
-                else
-                {
-                    Thread.Sleep(50);
+                    if (!c.Display.OnScreen())
+                    {
+                        Application.Run(new MouseTrackingContext(c));
+                        Thread.Sleep(500);
+                    }
+                    else
+                    {
+                        Thread.Sleep(50);
+                    }
                 }
             }
-                 
         }
         
     }
