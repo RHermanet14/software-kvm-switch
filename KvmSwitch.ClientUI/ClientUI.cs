@@ -5,6 +5,7 @@ namespace ClientUI
 {
     public partial class ClientUI : Form
     {
+        private int objectCount = 0;
         private Direction dir = Direction.Left;
         private Process? _clientProcess;
         public ClientUI()
@@ -23,6 +24,8 @@ namespace ClientUI
             StopButton.Enabled = false;
             IPTextBox.Text = Properties.Settings.Default.IP;
             PortTextBox.Text = Properties.Settings.Default.Port;
+            flowLayoutPanel1.AutoScroll = true;
+            NewServer();
         }
 
         private void StartButtonClick(object sender, EventArgs e)
@@ -135,6 +138,92 @@ namespace ClientUI
         {
             dir = (Direction)EdgeComboBox.SelectedIndex;
             Refresh();
+        }
+        private void NewServer()
+        {
+            Panel objectPanel = new Panel();
+            objectPanel.BorderStyle = BorderStyle.FixedSingle;
+            objectPanel.Width = 300;
+            objectPanel.Height = 130;
+            objectPanel.Margin = new Padding(5);
+
+            Label lblName = new Label();
+            lblName.Text = $"Enter IP Address";
+            lblName.Location = new Point(10, 10);
+            lblName.AutoSize = true;
+
+            TextBox txtName = new TextBox();
+            txtName.Location = new Point(100, 10);
+            txtName.Width = 150;
+
+            Label lblAge = new Label();
+            lblAge.Text = $"Enter Port";
+            lblAge.Location = new Point(10, 40);
+            lblAge.AutoSize = true;
+
+            TextBox txtAge = new TextBox();
+            txtAge.Location = new Point(100, 40);
+            txtAge.Width = 55;
+
+            Label lblMargin = new Label();
+            lblMargin.Text = $"Margin";
+            lblMargin.Location = new Point(10, 70);
+            lblMargin.AutoSize = true;
+
+            TextBox txtMargin = new();
+            txtMargin.Name = $"txtMargin_{objectCount}";
+            txtMargin.Location = new Point(100, 70);
+            txtMargin.Width = 55;
+            txtMargin.KeyPress += (sender, e) =>
+            {
+                if (!char.IsDigit(e.KeyChar) && e.KeyChar != 8) // char 8 = Backspace
+                {
+                    e.Handled = true;
+                }
+            };
+
+            Label lblEdge = new();
+            lblEdge.Text = $"Edge";
+            lblEdge.Location = new Point(10, 100);
+            lblEdge.AutoSize = true;
+
+            ComboBox cbEdge = new();
+            cbEdge.DropDownStyle = ComboBoxStyle.DropDownList;
+            cbEdge.Items.Add("Up");
+            cbEdge.Items.Add("Down");
+            cbEdge.Items.Add("Left");
+            cbEdge.Items.Add("Right");
+            cbEdge.SelectedIndex = objectCount;
+            cbEdge.Location = new Point(100, 100);
+            cbEdge.Width = 55;
+
+            Button btnRemove = new();
+            btnRemove.Text = "Remove";
+            btnRemove.Location = new Point(200, 100);
+            btnRemove.Click += (s, args) =>
+            {
+                flowLayoutPanel1.Controls.Remove(objectPanel);
+                objectPanel.Dispose();
+                objectCount--;
+            };
+
+            objectPanel.Controls.Add(lblName);
+            objectPanel.Controls.Add(txtName);
+            objectPanel.Controls.Add(lblAge);
+            objectPanel.Controls.Add(txtAge);
+            objectPanel.Controls.Add(lblMargin);
+            objectPanel.Controls.Add(txtMargin);
+            objectPanel.Controls.Add(lblEdge);
+            objectPanel.Controls.Add(cbEdge);
+            objectPanel.Controls.Add(btnRemove);
+
+            flowLayoutPanel1.Controls.Add(objectPanel);
+        }
+        private void AddServer_Click(object sender, EventArgs e)
+        {
+            if (objectCount >= 3) return;
+            objectCount++;
+            NewServer();
         }
     }
 }

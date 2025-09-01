@@ -42,6 +42,8 @@
             toolTip1 = new ToolTip(components);
             EdgeLabel = new Label();
             EdgeComboBox = new ComboBox();
+            AddServer = new Button();
+            flowLayoutPanel1 = new FlowLayoutPanel();
             SuspendLayout();
             // 
             // IPTextBox
@@ -65,7 +67,7 @@
             // 
             // StartButton
             // 
-            StartButton.Location = new Point(236, 186);
+            StartButton.Location = new Point(671, 380);
             StartButton.Name = "StartButton";
             StartButton.Size = new Size(92, 23);
             StartButton.TabIndex = 2;
@@ -112,7 +114,7 @@
             // 
             // StopButton
             // 
-            StopButton.Location = new Point(236, 232);
+            StopButton.Location = new Point(769, 380);
             StopButton.Name = "StopButton";
             StopButton.Size = new Size(92, 23);
             StopButton.TabIndex = 7;
@@ -123,7 +125,7 @@
             // MarginLabel
             // 
             MarginLabel.AutoSize = true;
-            MarginLabel.Location = new Point(12, 190);
+            MarginLabel.Location = new Point(369, 15);
             MarginLabel.Name = "MarginLabel";
             MarginLabel.Size = new Size(45, 15);
             MarginLabel.TabIndex = 8;
@@ -132,7 +134,7 @@
             // 
             // MarginTextBox
             // 
-            MarginTextBox.Location = new Point(63, 187);
+            MarginTextBox.Location = new Point(420, 12);
             MarginTextBox.Name = "MarginTextBox";
             MarginTextBox.Size = new Size(100, 23);
             MarginTextBox.TabIndex = 9;
@@ -142,7 +144,7 @@
             // EdgeLabel
             // 
             EdgeLabel.AutoSize = true;
-            EdgeLabel.Location = new Point(12, 236);
+            EdgeLabel.Location = new Point(568, 15);
             EdgeLabel.Name = "EdgeLabel";
             EdgeLabel.Size = new Size(33, 15);
             EdgeLabel.TabIndex = 11;
@@ -152,18 +154,37 @@
             // EdgeComboBox
             // 
             EdgeComboBox.FormattingEnabled = true;
-            EdgeComboBox.Location = new Point(63, 233);
+            EdgeComboBox.Location = new Point(619, 12);
             EdgeComboBox.Name = "EdgeComboBox";
             EdgeComboBox.Size = new Size(100, 23);
             EdgeComboBox.TabIndex = 10;
             EdgeComboBox.Text = "None";
             EdgeComboBox.SelectedValueChanged += EdgeComboBox_SelectedValueChanged;
             // 
+            // AddServer
+            // 
+            AddServer.Location = new Point(459, 356);
+            AddServer.Name = "AddServer";
+            AddServer.Size = new Size(115, 23);
+            AddServer.TabIndex = 12;
+            AddServer.Text = "Add New Server";
+            AddServer.UseVisualStyleBackColor = true;
+            AddServer.Click += AddServer_Click;
+            // 
+            // flowLayoutPanel1
+            // 
+            flowLayoutPanel1.Location = new Point(12, 168);
+            flowLayoutPanel1.Name = "flowLayoutPanel1";
+            flowLayoutPanel1.Size = new Size(384, 238);
+            flowLayoutPanel1.TabIndex = 13;
+            // 
             // ClientUI
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(873, 415);
+            Controls.Add(flowLayoutPanel1);
+            Controls.Add(AddServer);
             Controls.Add(EdgeLabel);
             Controls.Add(EdgeComboBox);
             Controls.Add(MarginTextBox);
@@ -199,5 +220,7 @@
         private ToolTip toolTip1;
         private ComboBox EdgeComboBox;
         private Label EdgeLabel;
+        private Button AddServer;
+        private FlowLayoutPanel flowLayoutPanel1;
     }
 }
