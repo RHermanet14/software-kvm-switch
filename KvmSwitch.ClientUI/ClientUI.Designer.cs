@@ -164,7 +164,7 @@
             // 
             // AddServer
             // 
-            AddServer.Location = new Point(369, 168);
+            AddServer.Location = new Point(369, 336);
             AddServer.Name = "AddServer";
             AddServer.Size = new Size(115, 23);
             AddServer.TabIndex = 12;
@@ -181,7 +181,7 @@
             // 
             // SavePreferences
             // 
-            SavePreferences.Location = new Point(369, 212);
+            SavePreferences.Location = new Point(369, 380);
             SavePreferences.Name = "SavePreferences";
             SavePreferences.Size = new Size(115, 23);
             SavePreferences.TabIndex = 14;

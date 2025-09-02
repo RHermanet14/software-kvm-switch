@@ -1,26 +1,20 @@
 using Shared;
 using System.Diagnostics;
 using System.Text.Json;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace ClientUI
 {
     public partial class ClientUI : Form
     {
+        private readonly List<string> serverOptions = ["Up", "Down", "Left", "Right"];
         private int serverCount = 0;
         private Direction dir = Direction.Left;
         private Process? _clientProcess;
         public ClientUI()
         {
             InitializeComponent();
-        }
-        private void InitOldArgs()
-        {
-            EdgeComboBox.DropDownStyle = ComboBoxStyle.DropDownList;
-            EdgeComboBox.Items.Add("Up");
-            EdgeComboBox.Items.Add("Down");
-            EdgeComboBox.Items.Add("Left");
-            EdgeComboBox.Items.Add("Right");
-            EdgeComboBox.SelectedIndex = 2;
         }
         private void LoadServerPreferences()
         {
@@ -46,7 +40,6 @@ namespace ClientUI
 
         private void ClientUI_Load(object sender, EventArgs e)
         {
-            InitOldArgs();
             StopButton.Enabled = false;
             IPTextBox.Text = KvmSwitch.ClientUI.Properties.Settings.Default.IP;
             PortTextBox.Text = KvmSwitch.ClientUI.Properties.Settings.Default.Port;
@@ -124,26 +117,35 @@ namespace ClientUI
 
         private void ClientUI_Paint(object sender, PaintEventArgs e)
         {
+            int serverNum = 0;
             DrawMonitor(575, 150, "Client", e);
-            switch (dir)
-            {
-                case Direction.Up:
-                    DrawMonitor(575, 30, "Server 1", e);
-                    break;
-                case Direction.Down:
-                    DrawMonitor(575, 270, "Server 1", e);
-                    break;
-                case Direction.Left:
-                    DrawMonitor(450, 150, "Server 1", e);
-                    break;
-                case Direction.Right:
-                    DrawMonitor(700, 150, "Server 1", e);
-                    break;
-                default:
-                    MessageBox.Show("Error: invalid direction inputted");
-                    break;
+            foreach (Panel panel in flowLayoutPanelServers.Controls) {
+                serverNum++;
+                foreach (Control ctrl in panel.Controls)
+                {  
+                    if (ctrl is ComboBox cb)
+                    {
+                        switch((Direction)cb.SelectedIndex)
+                        {
+                            case Direction.Up:
+                                DrawMonitor(575, 30, $"Server {serverNum}", e);
+                                break;
+                            case Direction.Down:
+                                DrawMonitor(575, 270, $"Server {serverNum}", e);
+                                break;
+                            case Direction.Left:
+                                DrawMonitor(450, 150, $"Server {serverNum}", e);
+                                break;
+                            case Direction.Right:
+                                DrawMonitor(700, 150, $"Server {serverNum}", e);
+                                break;
+                            default:
+                                //MessageBox.Show("Error: invalid direction inputted");
+                                break;
+                        }
+                    }
+                }
             }
-
         }
         private static void DrawMonitor(int x, int y, string text, PaintEventArgs e)
         {
@@ -244,18 +246,13 @@ namespace ClientUI
                 Location = new Point(100, 100),
                 Width = 55,
             };
-            cbEdge.Items.Add("Up");
-            cbEdge.Items.Add("Down");
-            cbEdge.Items.Add("Left");
-            cbEdge.Items.Add("Right");
-            if (edge == Direction.None)
-            {
-                cbEdge.SelectedIndex = serverCount;
-            } else
-            {
-                cbEdge.SelectedIndex = (int)edge;
-            }
+            cbEdge.Items.AddRange([.. serverOptions]);
 
+            cbEdge.SelectedValueChanged += (s, args) =>
+            {
+                dir = (Direction)cbEdge.SelectedIndex;
+                Refresh();
+            };
             Button btnRemove = new()
             {
                 Text = "Remove",
@@ -265,6 +262,7 @@ namespace ClientUI
             {
                 flowLayoutPanelServers.Controls.Remove(objectPanel);
                 objectPanel.Dispose();
+                Refresh();
             };
 
             objectPanel.Controls.Add(lblIP);
