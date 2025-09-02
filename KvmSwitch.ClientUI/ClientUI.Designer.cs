@@ -43,7 +43,8 @@
             EdgeLabel = new Label();
             EdgeComboBox = new ComboBox();
             AddServer = new Button();
-            flowLayoutPanel1 = new FlowLayoutPanel();
+            flowLayoutPanelServers = new FlowLayoutPanel();
+            SavePreferences = new Button();
             SuspendLayout();
             // 
             // IPTextBox
@@ -163,7 +164,7 @@
             // 
             // AddServer
             // 
-            AddServer.Location = new Point(459, 356);
+            AddServer.Location = new Point(369, 168);
             AddServer.Name = "AddServer";
             AddServer.Size = new Size(115, 23);
             AddServer.TabIndex = 12;
@@ -171,19 +172,30 @@
             AddServer.UseVisualStyleBackColor = true;
             AddServer.Click += AddServer_Click;
             // 
-            // flowLayoutPanel1
+            // flowLayoutPanelServers
             // 
-            flowLayoutPanel1.Location = new Point(12, 168);
-            flowLayoutPanel1.Name = "flowLayoutPanel1";
-            flowLayoutPanel1.Size = new Size(384, 238);
-            flowLayoutPanel1.TabIndex = 13;
+            flowLayoutPanelServers.Location = new Point(12, 168);
+            flowLayoutPanelServers.Name = "flowLayoutPanelServers";
+            flowLayoutPanelServers.Size = new Size(330, 235);
+            flowLayoutPanelServers.TabIndex = 13;
+            // 
+            // SavePreferences
+            // 
+            SavePreferences.Location = new Point(369, 212);
+            SavePreferences.Name = "SavePreferences";
+            SavePreferences.Size = new Size(115, 23);
+            SavePreferences.TabIndex = 14;
+            SavePreferences.Text = "Save Preferences";
+            SavePreferences.UseVisualStyleBackColor = true;
+            SavePreferences.Click += SavePreferences_Click;
             // 
             // ClientUI
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(873, 415);
-            Controls.Add(flowLayoutPanel1);
+            Controls.Add(SavePreferences);
+            Controls.Add(flowLayoutPanelServers);
             Controls.Add(AddServer);
             Controls.Add(EdgeLabel);
             Controls.Add(EdgeComboBox);
@@ -221,6 +233,7 @@
         private ComboBox EdgeComboBox;
         private Label EdgeLabel;
         private Button AddServer;
-        private FlowLayoutPanel flowLayoutPanel1;
+        private FlowLayoutPanel flowLayoutPanelServers;
+        private Button SavePreferences;
     }
 }

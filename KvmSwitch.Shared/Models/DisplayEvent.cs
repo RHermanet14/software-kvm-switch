@@ -22,12 +22,14 @@ namespace Shared
         public static implicit operator Dir(Direction d) => new Dir(d);
         public static implicit operator Direction(Dir d) => d.Side;
     }
-    public class DisplayEvent(Direction d, int m)
+    public class DisplayEvent
     {
-        public int margin { get; set; } = m;
-        public Direction edge { get; set; } = d;
+        public Direction edge { get; set; } = Direction.None;
+        public int margin { get; set; } = -1; 
         private static int width { get; set; } = -1;
         private static int height { get; set; } = -1;
+        public DisplayEvent() {}
+        public DisplayEvent(Direction d, int m) { edge = d; margin = m; }
 
         public static (int width, int height) GetScreenDimensions()
         {

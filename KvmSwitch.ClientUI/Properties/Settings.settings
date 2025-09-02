@@ -8,5 +8,8 @@
     <Setting Name="Port" Type="System.String" Scope="User">
       <Value Profile="(Default)">11111</Value>
     </Setting>
+    <Setting Name="SavedServersJson" Type="System.String" Scope="User">
+      <Value Profile="(Default)" />
+    </Setting>
   </Settings>
 </SettingsFile>

@@ -111,6 +111,7 @@ namespace Client {
                     _ = int.TryParse(args[(i * 4) + 3], out int margin);
                     c[i] = new ConnectInfo(ip, port, (Direction)edge, margin);
                     count++;
+                    Console.WriteLine($"{ip}\n{port}\n{(Direction)edge}\n{margin}\n");
                 }
 
                 while (true)

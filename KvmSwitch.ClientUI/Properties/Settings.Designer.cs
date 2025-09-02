@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace ClientUI.Properties {
+namespace KvmSwitch.ClientUI.Properties {
     
     
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
@@ -44,6 +44,18 @@ namespace ClientUI.Properties {
             }
             set {
                 this["Port"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string SavedServersJson {
+            get {
+                return ((string)(this["SavedServersJson"]));
+            }
+            set {
+                this["SavedServersJson"] = value;
             }
         }
     }

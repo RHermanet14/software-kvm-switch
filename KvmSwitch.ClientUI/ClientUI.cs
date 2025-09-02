@@ -1,19 +1,19 @@
 using Shared;
 using System.Diagnostics;
+using System.Text.Json;
 
 namespace ClientUI
 {
     public partial class ClientUI : Form
     {
-        private int objectCount = 0;
+        private int serverCount = 0;
         private Direction dir = Direction.Left;
         private Process? _clientProcess;
         public ClientUI()
         {
             InitializeComponent();
         }
-
-        private void ClientUI_Load(object sender, EventArgs e)
+        private void InitOldArgs()
         {
             EdgeComboBox.DropDownStyle = ComboBoxStyle.DropDownList;
             EdgeComboBox.Items.Add("Up");
@@ -21,11 +21,37 @@ namespace ClientUI
             EdgeComboBox.Items.Add("Left");
             EdgeComboBox.Items.Add("Right");
             EdgeComboBox.SelectedIndex = 2;
+        }
+        private void LoadServerPreferences()
+        {
+            string json = KvmSwitch.ClientUI.Properties.Settings.Default.SavedServersJson;
+            if(!string.IsNullOrEmpty(json) )
+            {
+                try
+                {
+                    List<ConnectInfo>? servers = JsonSerializer.Deserialize<List<ConnectInfo>>(json);
+                    if (servers != null)
+                    {
+                        foreach (ConnectInfo server in servers)
+                        {
+                            NewServer(server.IP, server.Port, server.Display.edge, server.Display.margin);
+                        }
+                    }
+                } catch (Exception ex)
+                {
+                    MessageBox.Show("Failed to load preferences: " + ex.Message);
+                }
+            }
+        }
+
+        private void ClientUI_Load(object sender, EventArgs e)
+        {
+            InitOldArgs();
             StopButton.Enabled = false;
-            IPTextBox.Text = Properties.Settings.Default.IP;
-            PortTextBox.Text = Properties.Settings.Default.Port;
-            flowLayoutPanel1.AutoScroll = true;
-            NewServer();
+            IPTextBox.Text = KvmSwitch.ClientUI.Properties.Settings.Default.IP;
+            PortTextBox.Text = KvmSwitch.ClientUI.Properties.Settings.Default.Port;
+            flowLayoutPanelServers.AutoScroll = true;
+            LoadServerPreferences();
         }
 
         private void StartButtonClick(object sender, EventArgs e)
@@ -42,13 +68,13 @@ namespace ClientUI
             {
                 if (IPCheckBox.Checked)
                 {
-                    Properties.Settings.Default.IP = IPTextBox.Text;
+                    KvmSwitch.ClientUI.Properties.Settings.Default.IP = IPTextBox.Text;
                 }
                 if (PortCheckBox.Checked)
                 {
-                    Properties.Settings.Default.Port = PortTextBox.Text;
+                    KvmSwitch.ClientUI.Properties.Settings.Default.Port = PortTextBox.Text;
                 }
-                Properties.Settings.Default.Save();
+                KvmSwitch.ClientUI.Properties.Settings.Default.Save();
                 StartButton.Enabled = false;
                 StopButton.Enabled = true;
                 ProcessStartInfo startInfo = new()
@@ -119,18 +145,21 @@ namespace ClientUI
             }
 
         }
-        private void DrawMonitor(int x, int y, string text, PaintEventArgs e)
+        private static void DrawMonitor(int x, int y, string text, PaintEventArgs e)
         {
-            Rectangle rect = new Rectangle(x, y, 100, 70);
+            Rectangle rect = new(x, y, 100, 70);
             e.Graphics.DrawRectangle(Pens.Gray, rect);
             e.Graphics.DrawLine(Pens.Gray, new Point(x + 50, y + 70), new Point(x + 50, y + 95));
             e.Graphics.DrawLine(Pens.Gray, new Point(x + 25, y + 95), new Point(x + 75, y + 95));
             string s = text;
-            Font font = new Font("Arial", 12);
+            Font font = new("Arial", 12);
             Brush brush = Brushes.Black;
-            StringFormat sf = new StringFormat();
-            sf.Alignment = StringAlignment.Center;
-            sf.LineAlignment = StringAlignment.Center;
+            StringFormat sf = new()
+            {
+                Alignment = StringAlignment.Center,
+                LineAlignment = StringAlignment.Center
+            };
+            
             e.Graphics.DrawString(s, font, brush, rect, sf);
         }
 
@@ -139,41 +168,60 @@ namespace ClientUI
             dir = (Direction)EdgeComboBox.SelectedIndex;
             Refresh();
         }
-        private void NewServer()
+        private void NewServer(string ip = "", int port = -1, Direction edge = Direction.None, int margin = -1)
         {
-            Panel objectPanel = new Panel();
-            objectPanel.BorderStyle = BorderStyle.FixedSingle;
-            objectPanel.Width = 300;
-            objectPanel.Height = 130;
-            objectPanel.Margin = new Padding(5);
+            Panel objectPanel = new()
+            {
+                BorderStyle = BorderStyle.FixedSingle,
+                Width = 300,
+                Height = 130,
+                Margin = new Padding(5)
+            };
 
-            Label lblName = new Label();
-            lblName.Text = $"Enter IP Address";
-            lblName.Location = new Point(10, 10);
-            lblName.AutoSize = true;
+            Label lblIP = new()
+            {
+                Text = $"Enter IP Address",
+                Location = new Point(10, 10),
+                AutoSize = true
+            };
 
-            TextBox txtName = new TextBox();
-            txtName.Location = new Point(100, 10);
-            txtName.Width = 150;
+            TextBox txtIP = new()
+            {
+                Name = $"txtIP_{serverCount}",
+                Location = new Point(100, 10),
+                Width = 150,
+                Text = ip
+            };
 
-            Label lblAge = new Label();
-            lblAge.Text = $"Enter Port";
-            lblAge.Location = new Point(10, 40);
-            lblAge.AutoSize = true;
+            Label lblPort = new()
+            {
+                Text = $"Enter Port",
+                Location = new Point(10, 40),
+                AutoSize = true
+            };
 
-            TextBox txtAge = new TextBox();
-            txtAge.Location = new Point(100, 40);
-            txtAge.Width = 55;
+            TextBox txtPort = new()
+            {
+                Name = $"txtPort_{serverCount}",
+                Location = new Point(100, 40),
+                Width = 55,
+                Text = port.ToString()
+            };
 
-            Label lblMargin = new Label();
-            lblMargin.Text = $"Margin";
-            lblMargin.Location = new Point(10, 70);
-            lblMargin.AutoSize = true;
+            Label lblMargin = new()
+            {
+                Text = $"Margin",
+                Location = new Point(10, 70),
+                AutoSize = true
+            };
 
-            TextBox txtMargin = new();
-            txtMargin.Name = $"txtMargin_{objectCount}";
-            txtMargin.Location = new Point(100, 70);
-            txtMargin.Width = 55;
+            TextBox txtMargin = new()
+            {
+                Name = $"txtMargin_{serverCount}",
+                Location = new Point(100, 70),
+                Width = 55,
+                Text = margin.ToString()
+            };
             txtMargin.KeyPress += (sender, e) =>
             {
                 if (!char.IsDigit(e.KeyChar) && e.KeyChar != 8) // char 8 = Backspace
@@ -182,48 +230,101 @@ namespace ClientUI
                 }
             };
 
-            Label lblEdge = new();
-            lblEdge.Text = $"Edge";
-            lblEdge.Location = new Point(10, 100);
-            lblEdge.AutoSize = true;
+            Label lblEdge = new()
+            {
+                Text = $"Edge",
+                Location = new Point(10, 100),
+                AutoSize = true
+            };
 
-            ComboBox cbEdge = new();
-            cbEdge.DropDownStyle = ComboBoxStyle.DropDownList;
+            ComboBox cbEdge = new()
+            {
+                Name = $"cbEdge_{serverCount}",
+                DropDownStyle = ComboBoxStyle.DropDownList,     
+                Location = new Point(100, 100),
+                Width = 55,
+            };
             cbEdge.Items.Add("Up");
             cbEdge.Items.Add("Down");
             cbEdge.Items.Add("Left");
             cbEdge.Items.Add("Right");
-            cbEdge.SelectedIndex = objectCount;
-            cbEdge.Location = new Point(100, 100);
-            cbEdge.Width = 55;
+            if (edge == Direction.None)
+            {
+                cbEdge.SelectedIndex = serverCount;
+            } else
+            {
+                cbEdge.SelectedIndex = (int)edge;
+            }
 
-            Button btnRemove = new();
-            btnRemove.Text = "Remove";
-            btnRemove.Location = new Point(200, 100);
+            Button btnRemove = new()
+            {
+                Text = "Remove",
+                Location = new Point(200, 100)
+            };
             btnRemove.Click += (s, args) =>
             {
-                flowLayoutPanel1.Controls.Remove(objectPanel);
+                flowLayoutPanelServers.Controls.Remove(objectPanel);
                 objectPanel.Dispose();
-                objectCount--;
             };
 
-            objectPanel.Controls.Add(lblName);
-            objectPanel.Controls.Add(txtName);
-            objectPanel.Controls.Add(lblAge);
-            objectPanel.Controls.Add(txtAge);
+            objectPanel.Controls.Add(lblIP);
+            objectPanel.Controls.Add(txtIP);
+            objectPanel.Controls.Add(lblPort);
+            objectPanel.Controls.Add(txtPort);
             objectPanel.Controls.Add(lblMargin);
             objectPanel.Controls.Add(txtMargin);
             objectPanel.Controls.Add(lblEdge);
             objectPanel.Controls.Add(cbEdge);
             objectPanel.Controls.Add(btnRemove);
 
-            flowLayoutPanel1.Controls.Add(objectPanel);
+            flowLayoutPanelServers.Controls.Add(objectPanel);
+            serverCount++;
         }
         private void AddServer_Click(object sender, EventArgs e)
         {
-            if (objectCount >= 3) return;
-            objectCount++;
+            if (flowLayoutPanelServers.Controls.Count > 3) return;
             NewServer();
+        }
+
+        private void SavePreferences_Click(object sender, EventArgs e)
+        {
+            int count = 0;
+            List<ConnectInfo> servers = [];
+            foreach (Panel panel in flowLayoutPanelServers.Controls)
+            {
+                string IP = "";
+                int Port = -1;
+                Direction Edge = Direction.None;
+                int Margin = -1;
+                foreach(Control ctrl in panel.Controls)
+                {
+                    if (ctrl is TextBox txt)
+                    {
+                        if (txt.Name.StartsWith("txtIP"))
+                        {
+                            IP = txt.Text;
+                        } else if (txt.Name.StartsWith("txtPort"))
+                        {
+                            _ = int.TryParse(txt.Text, out Port);
+                        } else // txtMargin
+                        {
+                            count++;
+                            _ = int.TryParse(txt.Text, out Margin);
+                        }
+                    } else if (ctrl is ComboBox cb)
+                    {
+                        count++;
+                        Edge = (Direction)cb.SelectedIndex;
+                    }
+                }
+                servers.Add(new(IP,Port,Edge,Margin));
+            }
+            string json = JsonSerializer.Serialize(servers);
+            KvmSwitch.ClientUI.Properties.Settings.Default.SavedServersJson = json;
+            KvmSwitch.ClientUI.Properties.Settings.Default.Save();
+            MessageBox.Show("Preferences Saved.");
+            Debug.WriteLine(json);
+
         }
     }
 }
