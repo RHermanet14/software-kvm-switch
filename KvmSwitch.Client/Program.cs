@@ -107,8 +107,8 @@ namespace Client {
                 {
                     ip = args[i * 4];
                     _ = int.TryParse(args[(i * 4) + 1], out int port);
-                    _ = int.TryParse(args[(i * 4) + 2], out int edge);
-                    _ = int.TryParse(args[(i * 4) + 3], out int margin);
+                    _ = int.TryParse(args[(i * 4) + 2], out int margin);
+                    _ = int.TryParse(args[(i * 4) + 3], out int edge);
                     c[i] = new ConnectInfo(ip, port, (Direction)edge, margin);
                     count++;
                     Console.WriteLine($"{ip}\n{port}\n{(Direction)edge}\n{margin}\n");

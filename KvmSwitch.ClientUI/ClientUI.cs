@@ -1,8 +1,9 @@
 using Shared;
-using System.Diagnostics;
-using System.Text.Json;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
+using System.Text.Json;
+using System.Windows.Forms.VisualStyles;
 
 namespace ClientUI
 {
@@ -10,16 +11,17 @@ namespace ClientUI
     {
         private readonly List<string> serverOptions = ["Up", "Down", "Left", "Right"];
         private int serverCount = 0;
-        private Direction dir = Direction.Left;
         private Process? _clientProcess;
+       
         public ClientUI()
         {
             InitializeComponent();
         }
+        
         private void LoadServerPreferences()
         {
             string json = KvmSwitch.ClientUI.Properties.Settings.Default.SavedServersJson;
-            if(!string.IsNullOrEmpty(json) )
+            if (!string.IsNullOrEmpty(json))
             {
                 try
                 {
@@ -31,7 +33,8 @@ namespace ClientUI
                             NewServer(server.IP, server.Port, server.Display.edge, server.Display.margin);
                         }
                     }
-                } catch (Exception ex)
+                }
+                catch (Exception ex)
                 {
                     MessageBox.Show("Failed to load preferences: " + ex.Message);
                 }
@@ -41,48 +44,68 @@ namespace ClientUI
         private void ClientUI_Load(object sender, EventArgs e)
         {
             StopButton.Enabled = false;
-            IPTextBox.Text = KvmSwitch.ClientUI.Properties.Settings.Default.IP;
-            PortTextBox.Text = KvmSwitch.ClientUI.Properties.Settings.Default.Port;
             flowLayoutPanelServers.AutoScroll = true;
             LoadServerPreferences();
         }
 
         private void StartButtonClick(object sender, EventArgs e)
         {
-            if (string.IsNullOrEmpty(IPTextBox.Text))
+            int serverCount = 0;
+            bool isReady = true;
+            ProcessStartInfo startInfo = new()
             {
-                MessageBox.Show("Error: no IP provided");
-            }
-            else if (string.IsNullOrEmpty(PortTextBox.Text))
+                FileName = "KvmSwitch.Client.exe",
+                UseShellExecute = false,
+                CreateNoWindow = true,
+            };
+            foreach (Panel panel in flowLayoutPanelServers.Controls)
             {
-                MessageBox.Show("Error: no port provided");
-            }
-            else
-            {
-                if (IPCheckBox.Checked)
+                serverCount++;
+                foreach (Control ctrl in panel.Controls)
                 {
-                    KvmSwitch.ClientUI.Properties.Settings.Default.IP = IPTextBox.Text;
+                    if (ctrl is TextBox txt)
+                    {
+                        if (string.IsNullOrEmpty(txt.Text) || txt.Text == "-1")
+                        {
+                            isReady = false;
+                        } else
+                        {
+                            if (txt.Name.StartsWith("txtIP"))
+                            {
+                                startInfo.ArgumentList.Add(txt.Text);
+                            }
+                            else if (txt.Name.StartsWith("txtPort"))
+                            {
+                                startInfo.ArgumentList.Add(txt.Text);
+                            }
+                            else // txtMargin
+                            {
+                                startInfo.ArgumentList.Add(txt.Text);
+                            }
+                        }
+                        
+                    }
+                    else if (ctrl is ComboBox cb)
+                    {
+                        if (cb.SelectedItem == null)
+                        {
+                            isReady = false;
+                        } else
+                        {
+                            startInfo.ArgumentList.Add(cb.SelectedIndex.ToString());
+                        }
+                    }
                 }
-                if (PortCheckBox.Checked)
-                {
-                    KvmSwitch.ClientUI.Properties.Settings.Default.Port = PortTextBox.Text;
-                }
-                KvmSwitch.ClientUI.Properties.Settings.Default.Save();
+            }
+            if (isReady && serverCount > 0)
+            {
                 StartButton.Enabled = false;
                 StopButton.Enabled = true;
-                ProcessStartInfo startInfo = new()
-                {
-                    FileName = "KvmSwitch.Client.exe",
-                    //UseShellExecute = false,
-                    //CreateNoWindow = true,
-                };
-                startInfo.ArgumentList.Add(IPTextBox.Text);
-                startInfo.ArgumentList.Add(PortTextBox.Text);
-                startInfo.ArgumentList.Add(((int)dir).ToString());
-                startInfo.ArgumentList.Add(MarginTextBox.Text);
                 _clientProcess = Process.Start(startInfo);
+            } else
+            {
+                MessageBox.Show("Error: missing parameters in one or multiple servers");
             }
-
         }
 
         private void StopButtonClick(object sender, EventArgs e)
@@ -97,6 +120,7 @@ namespace ClientUI
             base.OnFormClosing(e);
             KillClient();
         }
+        
         private void KillClient()
         {
             if (_clientProcess != null && !_clientProcess.HasExited)
@@ -106,26 +130,19 @@ namespace ClientUI
                 _clientProcess = null;
             }
         }
-
-        private void MarginKeyPress(object sender, KeyPressEventArgs e)
-        {
-            if (!char.IsDigit(e.KeyChar) && e.KeyChar != 8) // char 8 = Backspace
-            {
-                e.Handled = true;
-            }
-        }
-
+       
         private void ClientUI_Paint(object sender, PaintEventArgs e)
         {
             int serverNum = 0;
             DrawMonitor(575, 150, "Client", e);
-            foreach (Panel panel in flowLayoutPanelServers.Controls) {
+            foreach (Panel panel in flowLayoutPanelServers.Controls)
+            {
                 serverNum++;
                 foreach (Control ctrl in panel.Controls)
-                {  
+                {
                     if (ctrl is ComboBox cb)
                     {
-                        switch((Direction)cb.SelectedIndex)
+                        switch ((Direction)cb.SelectedIndex)
                         {
                             case Direction.Up:
                                 DrawMonitor(575, 30, $"Server {serverNum}", e);
@@ -147,6 +164,7 @@ namespace ClientUI
                 }
             }
         }
+        
         private static void DrawMonitor(int x, int y, string text, PaintEventArgs e)
         {
             Rectangle rect = new(x, y, 100, 70);
@@ -161,15 +179,10 @@ namespace ClientUI
                 Alignment = StringAlignment.Center,
                 LineAlignment = StringAlignment.Center
             };
-            
+
             e.Graphics.DrawString(s, font, brush, rect, sf);
         }
-
-        private void EdgeComboBox_SelectedValueChanged(object sender, EventArgs e)
-        {
-            dir = (Direction)EdgeComboBox.SelectedIndex;
-            Refresh();
-        }
+       
         private void NewServer(string ip = "", int port = -1, Direction edge = Direction.None, int margin = -1)
         {
             Panel objectPanel = new()
@@ -242,15 +255,18 @@ namespace ClientUI
             ComboBox cbEdge = new()
             {
                 Name = $"cbEdge_{serverCount}",
-                DropDownStyle = ComboBoxStyle.DropDownList,     
+                DropDownStyle = ComboBoxStyle.DropDownList,
                 Location = new Point(100, 100),
                 Width = 55,
             };
             cbEdge.Items.AddRange([.. serverOptions]);
+            if (edge != Direction.None)
+            {
+                cbEdge.SelectedIndex = (int)edge;
+            }
 
             cbEdge.SelectedValueChanged += (s, args) =>
             {
-                dir = (Direction)cbEdge.SelectedIndex;
                 Refresh();
             };
             Button btnRemove = new()
@@ -278,12 +294,13 @@ namespace ClientUI
             flowLayoutPanelServers.Controls.Add(objectPanel);
             serverCount++;
         }
+        
         private void AddServer_Click(object sender, EventArgs e)
         {
             if (flowLayoutPanelServers.Controls.Count > 3) return;
             NewServer();
         }
-
+       
         private void SavePreferences_Click(object sender, EventArgs e)
         {
             int count = 0;
@@ -294,35 +311,36 @@ namespace ClientUI
                 int Port = -1;
                 Direction Edge = Direction.None;
                 int Margin = -1;
-                foreach(Control ctrl in panel.Controls)
+                foreach (Control ctrl in panel.Controls)
                 {
                     if (ctrl is TextBox txt)
                     {
                         if (txt.Name.StartsWith("txtIP"))
                         {
                             IP = txt.Text;
-                        } else if (txt.Name.StartsWith("txtPort"))
+                        }
+                        else if (txt.Name.StartsWith("txtPort"))
                         {
                             _ = int.TryParse(txt.Text, out Port);
-                        } else // txtMargin
+                        }
+                        else // txtMargin
                         {
                             count++;
                             _ = int.TryParse(txt.Text, out Margin);
                         }
-                    } else if (ctrl is ComboBox cb)
+                    }
+                    else if (ctrl is ComboBox cb)
                     {
                         count++;
                         Edge = (Direction)cb.SelectedIndex;
                     }
                 }
-                servers.Add(new(IP,Port,Edge,Margin));
+                servers.Add(new(IP, Port, Edge, Margin));
             }
             string json = JsonSerializer.Serialize(servers);
             KvmSwitch.ClientUI.Properties.Settings.Default.SavedServersJson = json;
             KvmSwitch.ClientUI.Properties.Settings.Default.Save();
             MessageBox.Show("Preferences Saved.");
-            Debug.WriteLine(json);
-
         }
     }
 }

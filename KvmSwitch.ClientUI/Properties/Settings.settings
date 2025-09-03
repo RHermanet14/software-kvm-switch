@@ -2,12 +2,6 @@
 <SettingsFile xmlns="http://schemas.microsoft.com/VisualStudio/2004/01/settings" CurrentProfile="(Default)" GeneratedClassNamespace="KvmSwitch.ClientUI.Properties" GeneratedClassName="Settings">
   <Profiles />
   <Settings>
-    <Setting Name="IP" Type="System.String" Scope="User">
-      <Value Profile="(Default)">192.168.1.1</Value>
-    </Setting>
-    <Setting Name="Port" Type="System.String" Scope="User">
-      <Value Profile="(Default)">11111</Value>
-    </Setting>
     <Setting Name="SavedServersJson" Type="System.String" Scope="User">
       <Value Profile="(Default)" />
     </Setting>
