@@ -11,6 +11,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KvmSwitch.Shared", "KvmSwit
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KvmSwitch.ClientUI", "KvmSwitch.ClientUI\KvmSwitch.ClientUI.csproj", "{AC64DFBD-8FB4-421C-9D4A-EBD2C0711B7B}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KvmSwitch.ServerUI", "KvmSwitch.ServerUI\KvmSwitch.ServerUI.csproj", "{9BEA2F43-A116-50AB-02C1-45E83D4AE2BE}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -69,6 +71,18 @@ Global
 		{AC64DFBD-8FB4-421C-9D4A-EBD2C0711B7B}.Release|x64.Build.0 = Release|Any CPU
 		{AC64DFBD-8FB4-421C-9D4A-EBD2C0711B7B}.Release|x86.ActiveCfg = Release|Any CPU
 		{AC64DFBD-8FB4-421C-9D4A-EBD2C0711B7B}.Release|x86.Build.0 = Release|Any CPU
+		{9BEA2F43-A116-50AB-02C1-45E83D4AE2BE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9BEA2F43-A116-50AB-02C1-45E83D4AE2BE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9BEA2F43-A116-50AB-02C1-45E83D4AE2BE}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{9BEA2F43-A116-50AB-02C1-45E83D4AE2BE}.Debug|x64.Build.0 = Debug|Any CPU
+		{9BEA2F43-A116-50AB-02C1-45E83D4AE2BE}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{9BEA2F43-A116-50AB-02C1-45E83D4AE2BE}.Debug|x86.Build.0 = Debug|Any CPU
+		{9BEA2F43-A116-50AB-02C1-45E83D4AE2BE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9BEA2F43-A116-50AB-02C1-45E83D4AE2BE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9BEA2F43-A116-50AB-02C1-45E83D4AE2BE}.Release|x64.ActiveCfg = Release|Any CPU
+		{9BEA2F43-A116-50AB-02C1-45E83D4AE2BE}.Release|x64.Build.0 = Release|Any CPU
+		{9BEA2F43-A116-50AB-02C1-45E83D4AE2BE}.Release|x86.ActiveCfg = Release|Any CPU
+		{9BEA2F43-A116-50AB-02C1-45E83D4AE2BE}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
