@@ -1,7 +1,12 @@
+using System.Diagnostics;
+using System.Net;
+
 namespace ServerUI
 {
     public partial class ServerUI : Form
     {
+        private Process? _serverProcess;
+
         public ServerUI()
         {
             InitializeComponent();
@@ -16,6 +21,37 @@ namespace ServerUI
         {
             StartButton.Enabled = false;
             StopButton.Enabled = true;
+            ProcessStartInfo startInfo = new()
+            {
+                FileName = "KvmSwitch.Server.exe",
+                UseShellExecute = false,
+                CreateNoWindow = true,
+            };
+            startInfo.ArgumentList.Add(PortTextBox.Text);
+            _serverProcess = Process.Start(startInfo);
+        }
+
+        private void StopButton_Click(object sender, EventArgs e)
+        {
+            StartButton.Enabled = true;
+            StopButton.Enabled = false;
+            KillServer();
+        }
+
+        protected override void OnFormClosing(FormClosingEventArgs e)
+        {
+            base.OnFormClosing(e);
+            KillServer();
+        }
+
+        private void KillServer()
+        {
+            if (_serverProcess != null && !_serverProcess.HasExited)
+            {
+                _serverProcess.Kill();
+                _serverProcess.Dispose();
+                _serverProcess = null;
+            }
         }
 
         private void ServerUI_Load(object sender, EventArgs e)
@@ -23,13 +59,25 @@ namespace ServerUI
             StopButton.Enabled = false;
             IPLabel.Visible = false;
             PortTextBox.Text = KvmSwitch.ServerUI.Properties.Settings.Default.Port;
-
+            try
+            {
+                IPLabel.Text = GetLocalIPAddress();
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.Message);
+            }
         }
-
-        private void StopButton_Click(object sender, EventArgs e)
+        
+        private static string GetLocalIPAddress()
         {
-            StartButton.Enabled = true;
-            StopButton.Enabled = false;
+            var host = Dns.GetHostEntry(Dns.GetHostName());
+            foreach (var ip in host.AddressList)
+            {
+                if (ip.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)
+                    return ip.ToString();
+            }
+            throw new Exception("No network adapters with an IPv$ address in the system!");
         }
 
         private void IPLabel_Click(object sender, EventArgs e)

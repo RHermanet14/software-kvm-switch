@@ -15,9 +15,9 @@ namespace Server
         private NetworkService? network;
         public bool HasInitialConnection => network?.HasInitialConnection == true;
         public bool HasActiveClient => network?.HasActiveCoordClient == true;
-        public Listening()
+        public Listening(int port)
         {
-            network = new NetworkService();
+            network = new NetworkService(port);
             network.StartConnection();
         }
         public async Task<bool> RunSocket()
@@ -40,10 +40,13 @@ namespace Server
         private static volatile bool _isRunning = true;
         static async Task Main(string[] args)
         {
+            int port = 11111;
+            if (args.Length > 0)
+                _ = int.TryParse(args[0], out port);
             bool keepRunning;
             Console.CancelKeyPress += OnCancelKeyPress;
             var (width, height) = DisplayEvent.GetScreenDimensions();
-            l = new Listening();
+            l = new Listening(port);
 
             while (_isRunning)
             {

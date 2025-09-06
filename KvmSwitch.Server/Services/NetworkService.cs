@@ -13,12 +13,12 @@ public class NetworkService
     private Socket? _listener;
     private Socket? _currentClient;
     private DisplayEvent? _displayArgs;
-    private const int Port = 11111;
+    private readonly int Port;
     private const int BufferSize = 1024;
     private bool _isConnected = false;
     public bool HasActiveCoordClient => _currentClient?.Connected == true;
     public bool HasInitialConnection => _isConnected;
-
+    public NetworkService(int port) { Port = port; }
     public void StartConnection()
     {
         IPAddress ip = IPAddress.Any; // Listen on all available network interfaces
