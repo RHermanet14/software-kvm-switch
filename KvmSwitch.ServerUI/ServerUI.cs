@@ -1,5 +1,7 @@
 using System.Diagnostics;
 using System.Net;
+using System.Net.NetworkInformation;
+using System.Net.Sockets;
 
 namespace ServerUI
 {
@@ -61,7 +63,7 @@ namespace ServerUI
             PortTextBox.Text = KvmSwitch.ServerUI.Properties.Settings.Default.Port;
             try
             {
-                IPLabel.Text = GetLocalIPAddress();
+                IPLabel.Text = GetIPAddress();
             }
             catch (Exception ex)
             {
@@ -69,13 +71,20 @@ namespace ServerUI
             }
         }
         
-        private static string GetLocalIPAddress()
+        private static string GetIPAddress()
         {
-            var host = Dns.GetHostEntry(Dns.GetHostName());
-            foreach (var ip in host.AddressList)
+            foreach (var networkInterface in NetworkInterface.GetAllNetworkInterfaces())
             {
-                if (ip.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)
-                    return ip.ToString();
+                if (networkInterface.OperationalStatus == OperationalStatus.Up && networkInterface.NetworkInterfaceType == NetworkInterfaceType.Wireless80211)
+                {
+                    var ipProperties = networkInterface.GetIPProperties();
+
+                    foreach (var ip in ipProperties.UnicastAddresses)
+                    {
+                        if (ip.Address.AddressFamily == AddressFamily.InterNetwork)
+                            return ip.Address.ToString();
+                    }
+                }
             }
             throw new Exception("No network adapters with an IPv$ address in the system!");
         }
