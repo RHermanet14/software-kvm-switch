@@ -114,99 +114,57 @@ public class NetworkService
                     return;
                 }
             }
-
-            var jsonObjects = SplitJsonObjects(jsonString);
-            foreach (string jsonObj in jsonObjects)
-            {
-                if (string.IsNullOrWhiteSpace(jsonObj)) continue;
-                try
+            string jsonArray = "[" + jsonString.Replace("}{", "},{") + "]";
+            var jsonObjects = JsonSerializer.Deserialize<JsonElement[]>(jsonArray);
+            if (jsonObjects == null)
+                return;
+            foreach (var jsonObj in jsonObjects)
                 {
-                    if (jsonObj.Contains("\"ClickType\""))
+                    try
                     {
-                        MouseMovementEventArgs? m = JsonSerializer.Deserialize<MouseMovementEventArgs>(jsonObj);
-                        if (m != null)
+                        if (jsonObj.TryGetProperty("ClickType", out _))
                         {
-                            if (m.ClickType == 0)
+                            MouseMovementEventArgs? m = JsonSerializer.Deserialize<MouseMovementEventArgs>(jsonObj);
+                            if (m != null)
                             {
-                                MouseService.EstimateVelocity(m);
-                                MouseService.SetCursor();
-                                if (_displayArgs != null && !_displayArgs.OnScreen()) // maybe move null check
+                                if (m.ClickType == 0)
                                 {
-                                    SendTermination();
-                                    CloseCurrentClient();
+                                    MouseService.EstimateVelocity(m);
+                                    MouseService.SetCursor();
+                                    if (_displayArgs != null && !_displayArgs.OnScreen()) // maybe move null check
+                                    {
+                                        SendTermination();
+                                        CloseCurrentClient();
+                                    }
+                                }
+                                else
+                                {
+                                    MouseService.HandleClick(m.ClickType, m.ScrollSpeed);
                                 }
                             }
-                            else
+                        }
+                        else if (jsonObj.TryGetProperty("KeyInputType", out _))
+                        {
+                            KeyboardInputEventArgs? k = JsonSerializer.Deserialize<KeyboardInputEventArgs>(jsonObj);
+                            if (k != null)
                             {
-                                MouseService.HandleClick(m.ClickType, m.ScrollSpeed);
+                                MouseService.HandleKey(k.Key, k.KeyInputType);
                             }
                         }
+
                     }
-                    else if (jsonObj.Contains("\"KeyInputType\""))
+                    catch (JsonException ex)
                     {
-                        KeyboardInputEventArgs? k = JsonSerializer.Deserialize<KeyboardInputEventArgs>(jsonObj);
-                        if (k != null)
-                        {
-                            MouseService.HandleKey(k.Key, k.KeyInputType);
-                        }
+                        Console.WriteLine($"Error parsing individual JSON object: {ex.Message}");
+                        Console.WriteLine($"JSON object: {jsonObj}");
                     }
-                    
                 }
-                catch (JsonException ex)
-                {
-                    Console.WriteLine($"Error parsing individual JSON object: {ex.Message}");
-                    Console.WriteLine($"JSON object: {jsonObj}");
-                }
-            }
         }
         catch (JsonException ex)
         {
             Console.WriteLine($"JSON parsing error: {ex.Message}");
             Console.WriteLine($"Received data: {jsonString}");
         }
-    }
-
-    private List<string> SplitJsonObjects(string concatenatedJson)
-    {
-        var result = new List<string>();
-        int startPos = 0;
-        
-        while (startPos < concatenatedJson.Length)
-        {
-            // Find the start of next JSON object
-            int openBrace = concatenatedJson.IndexOf('{', startPos);
-            if (openBrace == -1) break;
-            
-            // Find the matching closing brace
-            int braceCount = 0;
-            int closeBrace = -1;
-            
-            for (int i = openBrace; i < concatenatedJson.Length; i++)
-            {
-                if (concatenatedJson[i] == '{')
-                    braceCount++;
-                else if (concatenatedJson[i] == '}')
-                {
-                    braceCount--;
-                    if (braceCount == 0)
-                    {
-                        closeBrace = i;
-                        break;
-                    }
-                }
-            }
-            
-            if (closeBrace != -1)
-            {
-                string jsonObj = concatenatedJson.Substring(openBrace, closeBrace - openBrace + 1);
-                result.Add(jsonObj);
-                startPos = closeBrace + 1;
-            }
-            else
-                break;
-        }
-        
-        return result;
     }
 
     public void SendTermination()
