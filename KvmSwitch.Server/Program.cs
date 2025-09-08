@@ -47,7 +47,7 @@ namespace Server
             Console.CancelKeyPress += OnCancelKeyPress;
             var (width, height) = DisplayEvent.GetScreenDimensions();
             l = new Listening(port);
-            //var inputTask = Task.Run(MonitorTermination);
+            var inputTask = Task.Run(MonitorTermination);
 
             while (_isRunning)
             {
