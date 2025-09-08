@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Net;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
+using Server;
 
 namespace ServerUI
 {
@@ -28,6 +29,7 @@ namespace ServerUI
                 FileName = "KvmSwitch.Server.exe",
                 UseShellExecute = false,
                 CreateNoWindow = true,
+                RedirectStandardInput = true,
             };
             startInfo.ArgumentList.Add(PortTextBox.Text);
             _serverProcess = Process.Start(startInfo);
@@ -50,7 +52,11 @@ namespace ServerUI
         {
             if (_serverProcess != null && !_serverProcess.HasExited)
             {
-                _serverProcess.Kill();
+                _serverProcess.StandardInput.WriteLine("exit");
+                _serverProcess.StandardInput.Flush();
+                _serverProcess.WaitForExit(3000);
+                if (!_serverProcess.HasExited)
+                    _serverProcess.Kill();
                 _serverProcess.Dispose();
                 _serverProcess = null;
             }

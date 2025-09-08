@@ -34,7 +34,7 @@ namespace Server
             network?.Disconnect();
         }
     }
-    class Program
+    public class Program
     {
         private static Listening? l;
         private static volatile bool _isRunning = true;
@@ -47,6 +47,7 @@ namespace Server
             Console.CancelKeyPress += OnCancelKeyPress;
             var (width, height) = DisplayEvent.GetScreenDimensions();
             l = new Listening(port);
+            //var inputTask = Task.Run(MonitorTermination);
 
             while (_isRunning)
             {
@@ -86,6 +87,39 @@ namespace Server
                 Console.WriteLine("Forcing program to exit...");
                 Environment.Exit(0);
             });
+        }
+
+        private static async Task MonitorTermination()
+        {
+            while (_isRunning)
+            {
+                try
+                {
+                    string? input = Console.ReadLine();
+                    if (input?.Trim().ToLower() == "exit")
+                    {
+                        _isRunning = false;
+                        StopServer();
+                        break;
+                    }
+                    await Task.Delay(100);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error while trying to get input from stdin: {ex.Message}");
+                }
+            }
+        }
+        public static void StopServer()
+        {
+            try
+            {               
+                l?.KeyboardInterrupt();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error during cleanup: {ex.Message}");
+            }
         }
         
     }
