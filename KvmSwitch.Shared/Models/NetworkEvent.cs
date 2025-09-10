@@ -1,10 +1,20 @@
 namespace Shared
 {
+    public class SharedInitialData
+    {
+        // Used in Server -> Client
+        public Point InitialCoords { get; set; }
+        public string DataType { get; set; } = "";
+        public string Format { get; set; } = "";
+        public string TextData { get; set; } = "";
+        public byte[] BinaryData { get; set; } = [];
+    }
     public struct InitialMouseData(Direction d, int m, Point p)
     {
+        // Used in Client -> Server
         public Direction Direction { get; set; } = d;
         public int Margin { get; set; } = m;
-        public Point InitialCoords { get; set; } = p;
+        public Point InitialCoords { get; set; } = p; // Remove and replace with a SharedInitialData object
     }
     public class MouseMovementEventArgs : EventArgs
     {
@@ -21,7 +31,7 @@ namespace Shared
     public class ConnectInfo
     {
         public string IP { get; set; } = "";
-        public int Port { get; set; }
+        public int Port { get; set; } = -1;
         public DisplayEvent Display { get; set; } = new(Direction.None, -1);
         public ConnectInfo() { }
         public ConnectInfo(string ip, int port, Direction dir, int border)

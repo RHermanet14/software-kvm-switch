@@ -7,6 +7,7 @@ using System.Text.Json;
 using services;
 using System.Runtime.InteropServices;
 using Shared;
+using System.Windows.Forms;
 
 public class NetworkService
 {
@@ -95,7 +96,7 @@ public class NetworkService
         {
             Console.WriteLine($"Error receiving coordinates: {ex.Message}");
             return true; // Try again
-        }       
+        }
     }
 
     private void ProcessReceivedData(string jsonString)
@@ -108,7 +109,7 @@ public class NetworkService
                 if (initial != null)
                 {
                     _displayArgs = new(initial.Value.Direction, initial.Value.Margin);
-                    
+
                     MouseService.SetInitialCursor(initial.Value.InitialCoords);
                     _isConnected = true;
                     return;
@@ -119,46 +120,46 @@ public class NetworkService
             if (jsonObjects == null)
                 return;
             foreach (var jsonObj in jsonObjects)
+            {
+                try
                 {
-                    try
+                    if (jsonObj.TryGetProperty("ClickType", out _))
                     {
-                        if (jsonObj.TryGetProperty("ClickType", out _))
+                        MouseMovementEventArgs? m = JsonSerializer.Deserialize<MouseMovementEventArgs>(jsonObj);
+                        if (m != null)
                         {
-                            MouseMovementEventArgs? m = JsonSerializer.Deserialize<MouseMovementEventArgs>(jsonObj);
-                            if (m != null)
+                            if (m.ClickType == 0)
                             {
-                                if (m.ClickType == 0)
+                                MouseService.EstimateVelocity(m);
+                                MouseService.SetCursor();
+                                if (_displayArgs != null && !_displayArgs.OnScreen()) // maybe move null check
                                 {
-                                    MouseService.EstimateVelocity(m);
-                                    MouseService.SetCursor();
-                                    if (_displayArgs != null && !_displayArgs.OnScreen()) // maybe move null check
-                                    {
-                                        SendTermination();
-                                        CloseCurrentClient();
-                                    }
-                                }
-                                else
-                                {
-                                    MouseService.HandleClick(m.ClickType, m.ScrollSpeed);
+                                    SendTermination();
+                                    CloseCurrentClient();
                                 }
                             }
-                        }
-                        else if (jsonObj.TryGetProperty("KeyInputType", out _))
-                        {
-                            KeyboardInputEventArgs? k = JsonSerializer.Deserialize<KeyboardInputEventArgs>(jsonObj);
-                            if (k != null)
+                            else
                             {
-                                MouseService.HandleKey(k.Key, k.KeyInputType);
+                                MouseService.HandleClick(m.ClickType, m.ScrollSpeed);
                             }
                         }
+                    }
+                    else if (jsonObj.TryGetProperty("KeyInputType", out _))
+                    {
+                        KeyboardInputEventArgs? k = JsonSerializer.Deserialize<KeyboardInputEventArgs>(jsonObj);
+                        if (k != null)
+                        {
+                            MouseService.HandleKey(k.Key, k.KeyInputType);
+                        }
+                    }
 
-                    }
-                    catch (JsonException ex)
-                    {
-                        Console.WriteLine($"Error parsing individual JSON object: {ex.Message}");
-                        Console.WriteLine($"JSON object: {jsonObj}");
-                    }
                 }
+                catch (JsonException ex)
+                {
+                    Console.WriteLine($"Error parsing individual JSON object: {ex.Message}");
+                    Console.WriteLine($"JSON object: {jsonObj}");
+                }
+            }
         }
         catch (JsonException ex)
         {
@@ -212,7 +213,7 @@ public class NetworkService
                 _currentClient = null;
                 _isConnected = false;
             }
-        } 
+        }
     }
 
     public void Disconnect()
@@ -234,5 +235,75 @@ public class NetworkService
             }
         }
         Console.WriteLine("Network service disconnected");
+    }
+
+    private SharedInitialData GetClipboardContent()
+    {
+        var clipboardData = new SharedInitialData();
+        try
+        {
+            var ClipboardObject = Clipboard.GetDataObject();
+            if (ClipboardObject == null) return clipboardData;
+            string[] formats = ClipboardObject.GetFormats();
+            foreach (string format in formats)
+            {
+                try
+                {
+                    var data = ClipboardObject.GetData(format);
+                    if (data == null) continue;
+                    if (data is string textData)
+                    {
+                        if (!string.IsNullOrEmpty(textData))
+                        {
+                            
+                        }
+                    }
+                    else if (data is Image image)
+                    {
+
+                    }
+                    else if (data is byte[] binaryData)
+                    {
+
+                    }
+                    else if (data is MemoryStream stream)
+                    {
+
+                    }
+                    else if (data is string[] stringArray)
+                    {
+
+                    }
+                    else if (data is System.Collections.Specialized.StringCollection stringCollection)
+                    {
+
+                    }
+                    else if (data is IEnumerable<string> stringEnumerable)
+                    {
+
+                    }
+                    else
+                    {
+                        string? fallbackText = data.ToString();
+                        if (!string.IsNullOrEmpty(fallbackText) && fallbackText != data.GetType().ToString())
+                        {
+                            
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    clipboardData.DataType = "error";
+                    clipboardData.TextData = ex.Message;
+                }
+            }
+
+        }
+        catch (Exception ex)
+        {
+            clipboardData.DataType = "error";
+            clipboardData.TextData = ex.Message;
+        }
+        return clipboardData;
     }
 }
