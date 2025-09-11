@@ -4,10 +4,7 @@ namespace Shared
     {
         // Used in Server -> Client
         public Point InitialCoords { get; set; }
-        public string DataType { get; set; } = "";
-        public string Format { get; set; } = "";
-        public string TextData { get; set; } = "";
-        public byte[] BinaryData { get; set; } = [];
+        public ClipboardData CurrentClipboard = new();
     }
     public struct InitialMouseData(Direction d, int m, Point p)
     {
