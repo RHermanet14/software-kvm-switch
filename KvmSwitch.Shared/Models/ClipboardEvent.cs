@@ -106,7 +106,82 @@ namespace Shared
         }
         public void SetClipboardContent()
         {
-
+            var ClipboardObject = new DataObject();
+            foreach (ClipboardData element in ClipboardElements)
+            {
+                try
+                {
+                    if (element.DataType == "text" && !string.IsNullOrEmpty(element.TextData)) // Switch to enums
+                    {
+                        switch (element.Format.ToLower()) // Switch to specifying the format, then setting it after it breaks
+                        {
+                            case "text":
+                            case "unicodetext":
+                            case "system.string":
+                                ClipboardObject.SetText(element.TextData, TextDataFormat.UnicodeText);
+                                break;
+                            case "html":
+                                ClipboardObject.SetText(element.TextData, TextDataFormat.Html);
+                                break;
+                            case "rtf":
+                                ClipboardObject.SetText(element.TextData, TextDataFormat.Rtf);
+                                break;
+                            case "csv":
+                            case "commaseparatedvalue":
+                                ClipboardObject.SetText(element.TextData, TextDataFormat.CommaSeparatedValue);
+                                break;
+                            default:
+                                ClipboardObject.SetData(element.Format, element.TextData); // Make sure this is correct
+                                break;
+                        }
+                    }
+                    else if (element.DataType == "binary" && element.BinaryData != null)
+                    {
+                        switch (element.Format.ToLower()) // Putting clipboard content into object only sets it to png (for now)
+                        {
+                            case "bitmap":
+                            case "system.drawing.bitmap":
+                            case "png":
+                            case "jpeg":
+                            case "gif":
+                            case "tiff":
+                                try
+                                {
+                                    using var ms = new MemoryStream(element.BinaryData);
+                                    var image = Image.FromStream(ms);
+                                    ClipboardObject.SetImage(image);
+                                }
+                                catch
+                                {
+                                    Console.WriteLine("Error: unable to set image from binary data");
+                                    ClipboardObject.SetData(element.Format, element.BinaryData);
+                                }
+                                break;
+                            default:
+                                using (var ms = new MemoryStream(element.BinaryData))
+                                {
+                                    ClipboardObject.SetData(element.Format, ms);
+                                }
+                                break;
+                        }
+                    }
+                    else if (element.DataType == "error")
+                    {
+                        throw new Exception("error data type detected");
+                    }
+                    else
+                    {
+                        throw new Exception("unknown data type detected");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error setting clipboard: {ex.Message}");
+                    throw;
+                }
+                
+            }
+            Clipboard.SetDataObject(ClipboardObject, true);
         }
     }
     
