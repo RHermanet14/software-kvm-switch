@@ -11,7 +11,6 @@ namespace Shared
     public class ClipboardEvent
     {
         public List<ClipboardData> ClipboardElements = [];
-        public List<string> AvailableFormats { get; set; } = [];
 
         private void AddTextElement(string formatType, string data)
         {
@@ -33,13 +32,22 @@ namespace Shared
             });
         }
 
-        public ClipboardData GetClipboardContent()
+        private void ClearElementsList()
         {
-            var cd = new ClipboardData();
+            ClipboardElements.Clear();
+        }
+
+        public void GetClipboardContent() // Populate ClipboardElements
+        {
+            ClearElementsList(); // Remove previous info
             try
             {
                 var ClipboardObject = Clipboard.GetDataObject();
-                if (ClipboardObject == null) return cd;
+                if (ClipboardObject == null)
+                {
+                    Console.WriteLine("Clipboard was empty");
+                    return;
+                }
                 string[] formats = ClipboardObject.GetFormats();
                 foreach (string format in formats)
                 {
@@ -92,18 +100,19 @@ namespace Shared
                     }
                     catch (Exception ex)
                     {
-                        cd.DataType = "error";
-                        cd.TextData = ex.Message;
+                        Console.WriteLine($"Error: {ex.Message}");
+                        return;
                     }
                 }
             }
             catch (Exception ex)
             {
-                cd.DataType = "error";
-                cd.TextData = ex.Message;
+                Console.WriteLine($"Error: {ex.Message}");
+                return;
             }
-            return cd;
+            return;
         }
+
         public void SetClipboardContent()
         {
             var ClipboardObject = new DataObject();
@@ -179,10 +188,9 @@ namespace Shared
                     Console.WriteLine($"Error setting clipboard: {ex.Message}");
                     throw;
                 }
-                
+
             }
             Clipboard.SetDataObject(ClipboardObject, true);
         }
     }
-    
 }

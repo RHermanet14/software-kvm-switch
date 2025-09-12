@@ -4,14 +4,17 @@ namespace Shared
     {
         // Used in Server -> Client
         public Point InitialCoords { get; set; }
-        public ClipboardData CurrentClipboard = new();
+        public ClipboardEvent CurrentClipboard = new();
     }
     public struct InitialMouseData(Direction d, int m, Point p)
     {
         // Used in Client -> Server
         public Direction Direction { get; set; } = d;
         public int Margin { get; set; } = m;
-        public Point InitialCoords { get; set; } = p; // Remove and replace with a SharedInitialData object
+        public SharedInitialData Shared = new(){
+            InitialCoords = p
+        };
+        
     }
     public class MouseMovementEventArgs : EventArgs
     {

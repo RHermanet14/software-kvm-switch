@@ -26,6 +26,7 @@ namespace services
                 clientSocket = new Socket(ipAddr.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
                 clientSocket.Connect(remoteEndPoint);
                 var m = new InitialMouseData(!(Dir)d.edge, d.margin, d.StartingPoint());
+                //m.Shared.CurrentClipboard.GetClipboardContent();
                 byte[] messageSent = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(m));
                 int byteSent = clientSocket.Send(messageSent);
                 isConnected = true;
