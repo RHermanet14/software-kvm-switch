@@ -110,7 +110,7 @@ public class NetworkService
                 {
                     _displayArgs = new(initial.Value.Direction, initial.Value.Margin);
 
-                    MouseService.SetInitialCursor(initial.Value.InitialCoords);
+                    MouseService.SetInitialCursor(initial.Value.Shared.InitialCoords);
                     _isConnected = true;
                     return;
                 }
