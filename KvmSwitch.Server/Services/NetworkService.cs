@@ -180,6 +180,7 @@ public class NetworkService
             {
                 InitialCoords = p
             };
+            sid.CurrentClipboard.GetClipboardContent();
             byte[] messageSent = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(sid)); // Changed to SharedInitialData
             int byteSent = _currentClient.Send(messageSent);
         }
