@@ -27,6 +27,7 @@ namespace services
                 clientSocket.Connect(remoteEndPoint);
                 var m = new InitialMouseData(!(Dir)d.edge, d.margin, d.StartingPoint());
                 m.Shared.CurrentClipboard.GetClipboardContent();    // Populate CurrentClipboard
+                Console.WriteLine($"{JsonSerializer.Serialize(m)}");
                 byte[] messageSent = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(m));
                 int byteSent = clientSocket.Send(messageSent);
                 isConnected = true;
@@ -73,6 +74,7 @@ namespace services
                 if (isConnected)
                     Console.WriteLine("SocketException : {0}", se.ToString());
                 isConnected = false;
+                Disconnect();
             }
             catch (Exception ex)
             {

@@ -10,7 +10,11 @@ namespace Shared
 
     public class ClipboardEvent
     {
-        public List<ClipboardData> ClipboardElements = [];
+        public ClipboardEvent()
+        {
+            ClipboardElements = [];
+        }
+        public List<ClipboardData> ClipboardElements { get; set;}
 
         private void AddTextElement(string formatType, string data)
         {
