@@ -111,6 +111,7 @@ public class NetworkService
                     _displayArgs = new(initial.Value.Direction, initial.Value.Margin);
 
                     MouseService.SetInitialCursor(initial.Value.Shared.InitialCoords);
+                    initial.Value.Shared.CurrentClipboard.SetClipboardContent();    // Set it here
                     _isConnected = true;
                     return;
                 }
@@ -175,7 +176,11 @@ public class NetworkService
         try
         {
             Point p = _displayArgs.StartingPoint();
-            byte[] messageSent = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(p));
+            SharedInitialData sid = new()
+            {
+                InitialCoords = p
+            };
+            byte[] messageSent = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(sid)); // Changed to SharedInitialData
             int byteSent = _currentClient.Send(messageSent);
         }
         catch (ArgumentNullException ane)

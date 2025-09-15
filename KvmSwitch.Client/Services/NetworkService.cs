@@ -26,7 +26,7 @@ namespace services
                 clientSocket = new Socket(ipAddr.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
                 clientSocket.Connect(remoteEndPoint);
                 var m = new InitialMouseData(!(Dir)d.edge, d.margin, d.StartingPoint());
-                //m.Shared.CurrentClipboard.GetClipboardContent();
+                m.Shared.CurrentClipboard.GetClipboardContent();    // Populate CurrentClipboard
                 byte[] messageSent = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(m));
                 int byteSent = clientSocket.Send(messageSent);
                 isConnected = true;
@@ -110,7 +110,7 @@ namespace services
         {
             if (clientSocket == null || !clientSocket.Connected || !isConnected) return false;
             byte[] buffer = new byte[1024];
-            StringBuilder sb = new StringBuilder();
+            StringBuilder sb = new();
             try
             {
                 int bytesRead = await clientSocket.ReceiveAsync(new ArraySegment<byte>(buffer), SocketFlags.None);
@@ -120,8 +120,13 @@ namespace services
                 string jsonString = sb.ToString();
                 if (string.IsNullOrEmpty(jsonString))
                     return false;
-                Point p = JsonSerializer.Deserialize<Point>(jsonString);
-                DisplayEvent.SetCursor(p);
+                var p = JsonSerializer.Deserialize<SharedInitialData>(jsonString); // Changed to SharedInitialData
+                if (p != null)
+                {
+                    DisplayEvent.SetCursor(p.InitialCoords);
+                    p.CurrentClipboard.SetClipboardContent();
+                }
+                    
                 Console.WriteLine("Termination signal received. Stopping service...");
                 return true;
             }
