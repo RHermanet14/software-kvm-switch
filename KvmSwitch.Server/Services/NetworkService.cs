@@ -71,7 +71,6 @@ public class NetworkService
                 CloseCurrentClient();
                 return false;
             }
-
             sb.Append(Encoding.UTF8.GetString(buffer, 0, bytesRead));
 
             while (_currentClient.Available > 0) // Continue reading if more data is available
@@ -111,7 +110,13 @@ public class NetworkService
                     _displayArgs = new(initial.Value.Direction, initial.Value.Margin);
 
                     MouseService.SetInitialCursor(initial.Value.Shared.InitialCoords);
-                    initial.Value.Shared.CurrentClipboard.SetClipboardContent();    // Set it here
+                    var staThread = new Thread(() =>
+                    {
+                        initial.Value.Shared.CurrentClipboard.SetClipboardContent();
+                    });
+                    staThread.SetApartmentState(ApartmentState.STA);
+                    staThread.Start();
+                    staThread.Join();
                     _isConnected = true;
                     return;
                 }
@@ -181,6 +186,7 @@ public class NetworkService
                 InitialCoords = p
             };
             sid.CurrentClipboard.GetClipboardContent();
+            Console.WriteLine($"{JsonSerializer.Serialize(sid)}");
             byte[] messageSent = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(sid)); // Changed to SharedInitialData
             int byteSent = _currentClient.Send(messageSent);
         }
