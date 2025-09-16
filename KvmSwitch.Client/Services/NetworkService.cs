@@ -27,7 +27,6 @@ namespace services
                 clientSocket.Connect(remoteEndPoint);
                 var m = new InitialMouseData(!(Dir)d.edge, d.margin, d.StartingPoint());
                 m.Shared.CurrentClipboard.GetClipboardContent();    // Populate CurrentClipboard
-                Console.WriteLine($"{JsonSerializer.Serialize(m)}");
                 byte[] messageSent = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(m));
                 int byteSent = clientSocket.Send(messageSent);
                 isConnected = true;
@@ -126,7 +125,13 @@ namespace services
                 if (p != null)
                 {
                     DisplayEvent.SetCursor(p.InitialCoords);
-                    p.CurrentClipboard.SetClipboardContent();
+                    var staThread = new Thread(() =>
+                    {
+                        p.CurrentClipboard.SetClipboardContent();
+                    });
+                    staThread.SetApartmentState(ApartmentState.STA);
+                    staThread.Start();
+                    staThread.Join();
                 }
                     
                 Console.WriteLine("Termination signal received. Stopping service...");

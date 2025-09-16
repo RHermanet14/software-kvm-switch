@@ -14,7 +14,7 @@ namespace Shared
         {
             ClipboardElements = [];
         }
-        public List<ClipboardData> ClipboardElements { get; set;}
+        public List<ClipboardData> ClipboardElements { get; set; } // Make static
 
         private void AddTextElement(string formatType, string data)
         {
