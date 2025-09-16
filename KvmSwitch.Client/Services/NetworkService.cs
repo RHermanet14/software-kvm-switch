@@ -30,6 +30,8 @@ namespace services
                 byte[] messageSent = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(m));
                 int byteSent = clientSocket.Send(messageSent);
                 isConnected = true;
+                Console.WriteLine($"Length of Json string: {JsonSerializer.Serialize(m).Length}");
+                Console.WriteLine($"Length of byte stream: {Encoding.UTF8.GetBytes(JsonSerializer.Serialize(m)).Length}");
                 return true;
             }
             catch
@@ -56,7 +58,7 @@ namespace services
         }
         public void SendCoords(MouseMovementEventArgs e)
         {
-            if (!isConnected || clientSocket == null || !clientSocket.Connected)
+            if (!IsConnectionHealthy() || clientSocket == null)
                 return;
             try
             {
@@ -79,6 +81,29 @@ namespace services
             {
                 Console.WriteLine("Unexpected exception : {0}", ex.ToString());
                 isConnected = false;
+            }
+        }
+        private bool IsConnectionHealthy()
+        {
+            if (!isConnected || clientSocket == null)
+                return false;
+            try
+            {
+                if (clientSocket.Poll(0, SelectMode.SelectError))
+                    return false;
+            
+                if (clientSocket.Poll(0, SelectMode.SelectRead))
+                {
+                    if (clientSocket.Available == 0)
+                    {
+                        return false;
+                    }
+                }
+                return clientSocket.Connected;
+            }
+            catch
+            {
+                return false;
             }
         }
         public void SendKeys(KeyboardInputEventArgs k)
