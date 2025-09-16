@@ -1,3 +1,5 @@
+using System.IO.Compression;
+
 namespace Shared
 {
     public class ClipboardData
@@ -6,6 +8,27 @@ namespace Shared
         public string DataType { get; set; } = "";
         public string TextData { get; set; } = "";
         public byte[] BinaryData { get; set; } = [];
+    }
+
+    public class ClipboardHelper
+    {
+        public static byte[] Compress(byte[] data)
+        {
+            using var compressedStream = new MemoryStream();
+            using (var gzipStream = new GZipStream(compressedStream, CompressionMode.Compress))
+            {
+                gzipStream.Write(data, 0, data.Length);
+            }
+            return compressedStream.ToArray();
+        }
+        public static byte[] Decompress(byte[] compressedData)
+        {
+            using var compressedStream = new MemoryStream(compressedData);
+            using var gzipStream = new GZipStream(compressedStream, CompressionMode.Decompress);
+            using var decompressedStream = new MemoryStream();
+            gzipStream.CopyTo(decompressedStream);
+            return decompressedStream.ToArray();
+        }
     }
 
     public class ClipboardEvent

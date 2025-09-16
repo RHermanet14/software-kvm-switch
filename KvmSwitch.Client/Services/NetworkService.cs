@@ -4,6 +4,7 @@ using System.Net.Sockets;
 using System.Text;
 using System.Text.Json;
 using Shared;
+using MessagePack;
 namespace services
 {
     public class NetworkService
@@ -27,11 +28,21 @@ namespace services
                 clientSocket.Connect(remoteEndPoint);
                 var m = new InitialMouseData(!(Dir)d.edge, d.margin, d.StartingPoint());
                 m.Shared.CurrentClipboard.GetClipboardContent();    // Populate CurrentClipboard
+
+                byte[] messageSent = MessagePackSerializer.Serialize(m);
+                byte[] compressedData = ClipboardHelper.Compress(messageSent);
+
+                byte[] dataLength = BitConverter.GetBytes(compressedData.Length);
+                Console.WriteLine($"Length of data: {compressedData.Length}");
+                clientSocket.Send(dataLength);
+                clientSocket.Send(compressedData);
+                /*
                 byte[] messageSent = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(m));
                 int byteSent = clientSocket.Send(messageSent);
                 isConnected = true;
                 Console.WriteLine($"Length of Json string: {JsonSerializer.Serialize(m).Length}");
                 Console.WriteLine($"Length of byte stream: {Encoding.UTF8.GetBytes(JsonSerializer.Serialize(m)).Length}");
+                */
                 return true;
             }
             catch
