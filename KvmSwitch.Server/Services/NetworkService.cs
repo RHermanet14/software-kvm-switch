@@ -185,8 +185,21 @@ public class NetworkService
             {
                 InitialCoords = p
             };
-            sid.CurrentClipboard.GetClipboardContent();
-            Console.WriteLine($"{JsonSerializer.Serialize(sid)}");
+            var staThread = new Thread(() =>
+            {
+                try
+                {
+                    sid.CurrentClipboard.GetClipboardContent();
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error retrieving clipboard: {ex.Message}");
+                }
+            });
+            staThread.SetApartmentState(ApartmentState.STA);
+            staThread.Start();
+            staThread.Join();
+
             byte[] messageSent = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(sid)); // Changed to SharedInitialData
             int byteSent = _currentClient.Send(messageSent);
         }
