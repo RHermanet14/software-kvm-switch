@@ -27,26 +27,20 @@ namespace services
                 clientSocket = new Socket(ipAddr.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
                 clientSocket.Connect(remoteEndPoint);
                 var m = new InitialMouseData(!(Dir)d.edge, d.margin, d.StartingPoint());
-                m.Shared.CurrentClipboard.GetClipboardContent();    // Populate CurrentClipboard
+                m.Shared.CurrentClipboard.GetClipboardContent();    // Populate CurrentClipboard and optimize
+
+                ClipboardHelper.AnalyzeMessagePackSize(m); // Debugging
 
                 byte[] messageSent = MessagePackSerializer.Serialize(m);
                 byte[] compressedData = ClipboardHelper.Compress(messageSent);
-
                 byte[] dataLength = BitConverter.GetBytes(compressedData.Length);
-                Console.WriteLine($"Length of data: {compressedData.Length}");
                 clientSocket.Send(dataLength);
                 clientSocket.Send(compressedData);
-                /*
-                byte[] messageSent = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(m));
-                int byteSent = clientSocket.Send(messageSent);
-                isConnected = true;
-                Console.WriteLine($"Length of Json string: {JsonSerializer.Serialize(m).Length}");
-                Console.WriteLine($"Length of byte stream: {Encoding.UTF8.GetBytes(JsonSerializer.Serialize(m)).Length}");
-                */
                 return true;
             }
-            catch
+            catch (Exception ex)
             {
+                Console.WriteLine($"{ex.Message}");
                 Console.WriteLine("Could not establish connection with server.");
                 clientSocket?.Close();
                 isConnected = false;
@@ -150,6 +144,47 @@ namespace services
             StringBuilder sb = new();
             try
             {
+                byte[] lengthBuffer = new byte[4];
+                int bytesRead = 0;
+                while (bytesRead < 4)
+                {
+                    int read = await clientSocket.ReceiveAsync(
+                        new ArraySegment<byte>(
+                            lengthBuffer, bytesRead, 4 - bytesRead
+                        ), SocketFlags.None
+                    );
+                    if (read == 0) return false;
+                    bytesRead += read;
+                }
+                int compressedLength = BitConverter.ToInt32(lengthBuffer, 0);
+
+                byte[] compressedBuffer = new byte[compressedLength];
+                bytesRead = 0;
+                while (bytesRead < compressedLength)
+                {
+                    int read = await clientSocket.ReceiveAsync(
+                        new ArraySegment<byte>(compressedBuffer, bytesRead, compressedLength - bytesRead),
+                        SocketFlags.None);
+                    if (read == 0) return false;
+                    bytesRead += read;
+                }
+                byte[] decompressedData = ClipboardHelper.Decompress(compressedBuffer);
+                var data = MessagePackSerializer.Deserialize<SharedInitialData>(decompressedData);
+                if (data != null)
+                {
+                    DisplayEvent.SetCursor(data.InitialCoords);
+                    var staThread = new Thread(() =>
+                    {
+                        data.CurrentClipboard.SetClipboardContent();
+                    });
+                    staThread.SetApartmentState(ApartmentState.STA);
+                    staThread.Start();
+                    staThread.Join();
+                }
+
+
+
+                /*
                 int bytesRead = await clientSocket.ReceiveAsync(new ArraySegment<byte>(buffer), SocketFlags.None);
                 if (bytesRead == 0)
                     return false;
@@ -169,6 +204,7 @@ namespace services
                     staThread.Start();
                     staThread.Join();
                 }
+                */
                     
                 Console.WriteLine("Termination signal received. Stopping service...");
                 return true;

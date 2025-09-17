@@ -93,6 +93,7 @@ public class NetworkService
                 }
                 byte[] decompressedData = ClipboardHelper.Decompress(compressedBuffer);
                 var data = MessagePackSerializer.Deserialize<InitialMouseData>(decompressedData);
+                
                 ProcessInitialData(data);
             }
             else // If its just coordinates
@@ -238,8 +239,13 @@ public class NetworkService
             staThread.Start();
             staThread.Join();
 
-            byte[] messageSent = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(sid)); // Changed to SharedInitialData
-            int byteSent = _currentClient.Send(messageSent);
+            byte[] messageSent = MessagePackSerializer.Serialize(sid);
+            byte[] compressedData = ClipboardHelper.Compress(messageSent);
+            byte[] dataLength = BitConverter.GetBytes(compressedData.Length);
+            _currentClient.Send(dataLength);
+            _currentClient.Send(compressedData);
+            //byte[] messageSent = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(sid)); // Changed to SharedInitialData
+            //int byteSent = _currentClient.Send(messageSent);
         }
         catch (ArgumentNullException ane)
         {
