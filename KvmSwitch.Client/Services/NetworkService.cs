@@ -29,13 +29,14 @@ namespace services
                 var m = new InitialMouseData(!(Dir)d.edge, d.margin, d.StartingPoint());
                 m.Shared.CurrentClipboard.GetClipboardContent();    // Populate CurrentClipboard and optimize
 
-                ClipboardHelper.AnalyzeMessagePackSize(m); // Debugging
+                //ClipboardHelper.AnalyzeMessagePackSize(m); // Debugging
 
                 byte[] messageSent = MessagePackSerializer.Serialize(m);
                 byte[] compressedData = ClipboardHelper.Compress(messageSent);
                 byte[] dataLength = BitConverter.GetBytes(compressedData.Length);
                 clientSocket.Send(dataLength);
                 clientSocket.Send(compressedData);
+                isConnected = true;
                 return true;
             }
             catch (Exception ex)
@@ -58,7 +59,7 @@ namespace services
             {
                 //nothing for now
             }
-            
+
             clientSocket?.Close();
         }
         public void SendCoords(MouseMovementEventArgs e)
@@ -91,12 +92,15 @@ namespace services
         private bool IsConnectionHealthy()
         {
             if (!isConnected || clientSocket == null)
+            {
+                Console.WriteLine($"not connected: {!isConnected}, clientSocketnull?: {clientSocket == null}");
                 return false;
+            }
             try
             {
                 if (clientSocket.Poll(0, SelectMode.SelectError))
                     return false;
-            
+
                 if (clientSocket.Poll(0, SelectMode.SelectRead))
                 {
                     if (clientSocket.Available == 0)
@@ -106,8 +110,9 @@ namespace services
                 }
                 return clientSocket.Connected;
             }
-            catch
+            catch (Exception ex)
             {
+                Console.WriteLine($"An exception was thrown: {ex.Message}");
                 return false;
             }
         }
@@ -140,8 +145,7 @@ namespace services
         public async Task<bool> ReceiveTermination()
         {
             if (clientSocket == null || !clientSocket.Connected || !isConnected) return false;
-            byte[] buffer = new byte[1024];
-            StringBuilder sb = new();
+
             try
             {
                 byte[] lengthBuffer = new byte[4];
@@ -157,7 +161,6 @@ namespace services
                     bytesRead += read;
                 }
                 int compressedLength = BitConverter.ToInt32(lengthBuffer, 0);
-
                 byte[] compressedBuffer = new byte[compressedLength];
                 bytesRead = 0;
                 while (bytesRead < compressedLength)
@@ -175,39 +178,21 @@ namespace services
                     DisplayEvent.SetCursor(data.InitialCoords);
                     var staThread = new Thread(() =>
                     {
-                        data.CurrentClipboard.SetClipboardContent();
+                        try
+                        {
+                            data.CurrentClipboard.SetClipboardContent();
+
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine($"Error setting clipboard in client: {ex.Message}");
+                        }
                     });
                     staThread.SetApartmentState(ApartmentState.STA);
                     staThread.Start();
                     staThread.Join();
                 }
-
-
-
-                /*
-                int bytesRead = await clientSocket.ReceiveAsync(new ArraySegment<byte>(buffer), SocketFlags.None);
-                if (bytesRead == 0)
-                    return false;
-                sb.Append(Encoding.UTF8.GetString(buffer, 0, bytesRead));
-                string jsonString = sb.ToString();
-                if (string.IsNullOrEmpty(jsonString))
-                    return false;
-                var p = JsonSerializer.Deserialize<SharedInitialData>(jsonString); // Changed to SharedInitialData
-                if (p != null)
-                {
-                    DisplayEvent.SetCursor(p.InitialCoords);
-                    var staThread = new Thread(() =>
-                    {
-                        p.CurrentClipboard.SetClipboardContent();
-                    });
-                    staThread.SetApartmentState(ApartmentState.STA);
-                    staThread.Start();
-                    staThread.Join();
-                }
-                */
-                    
                 Console.WriteLine("Termination signal received. Stopping service...");
-                return true;
             }
             catch (SocketException ex)
             {
@@ -220,7 +205,25 @@ namespace services
                 Console.WriteLine($"Error: {ex.Message}");
                 return false;
             }
+            SendAcknowledgment(); //Send acknowledgement to close server
+            return true;
+        }
+
+        private void SendAcknowledgment()
+        {
+            try
+            {
+                var ackMessage = new { status = "ok", message = "termination_received" };
+                byte[] ackData = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(ackMessage));
+                byte[] lengthPrefix = BitConverter.GetBytes(ackData.Length);
+
+                clientSocket?.Send(lengthPrefix);
+                clientSocket?.Send(ackData);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Failed to send acknowledgment: {ex.Message}");
+            }
         }
     }
-    
 }
