@@ -37,7 +37,33 @@ namespace Shared
             gzipStream.CopyTo(decompressedStream);
             return decompressedStream.ToArray();
         }
-        
+
+        public static void AnalyzeSharedInitialDataSize(SharedInitialData data)
+        {
+            Console.WriteLine($"Clipboard elements count: {data.CurrentClipboard.ClipboardElements.Count}");
+
+            foreach (var element in data.CurrentClipboard.ClipboardElements)
+            {
+                Console.WriteLine($"Format: {element.Format}, DataType: {element.DataType}");
+                if (element.DataType == "text")
+                {
+                    Console.WriteLine($"  Text length: {element.TextData?.Length ?? 0}");
+                }
+                else
+                {
+                    Console.WriteLine($"  Binary length: {element.BinaryData?.Length ?? 0}");
+                }
+            }
+
+            // Test MessagePack size before compression
+            byte[] msgPackOnly = MessagePackSerializer.Serialize(data);
+            Console.WriteLine($"MessagePack before compression: {msgPackOnly.Length} bytes");
+
+            // Test compression ratio
+            byte[] compressed = Compress(msgPackOnly);
+            Console.WriteLine($"After compression: {compressed.Length} bytes");
+            Console.WriteLine($"Compression ratio: {(1.0 - (double)compressed.Length / msgPackOnly.Length) * 100:F1}%");
+        }
         public static void AnalyzeMessagePackSize(InitialMouseData data)
         {
             Console.WriteLine($"Clipboard elements count: {data.Shared.CurrentClipboard.ClipboardElements.Count}");
@@ -76,7 +102,7 @@ namespace Shared
         [MessagePack.Key(0)]
         public List<ClipboardData> ClipboardElements { get; set; }
 
-        public void OptimizeClipboardData() // Make private?
+        private void OptimizeClipboardData() // Make private?
         {
             var optimized = new List<ClipboardData>();
         
@@ -87,7 +113,7 @@ namespace Shared
                 .ToList();
             optimized.AddRange(textElements);
         
-        // For images, keep only the most efficient format
+            // For images, keep only the most efficient format
             var imageElements = ClipboardElements
                 .Where(x => x.DataType == "binary")
                 .ToList();
@@ -101,11 +127,7 @@ namespace Shared
             
                 optimized.Add(bestImage);
             }
-        
-            int savedElements = ClipboardElements.Count - optimized.Count;
             ClipboardElements = optimized;
-        
-            Console.WriteLine($"Optimized clipboard: removed {savedElements} duplicate elements");  
         }
 
         private static int GetImageFormatPriority(string format)

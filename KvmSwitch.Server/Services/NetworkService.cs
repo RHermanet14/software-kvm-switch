@@ -93,7 +93,7 @@ public class NetworkService
                 }
                 byte[] decompressedData = ClipboardHelper.Decompress(compressedBuffer);
                 var data = MessagePackSerializer.Deserialize<InitialMouseData>(decompressedData);
-                
+
                 ProcessInitialData(data);
             }
             else // If its just coordinates
@@ -140,15 +140,27 @@ public class NetworkService
         if (initial != null)
         {
             _displayArgs = new(initial.Value.Direction, initial.Value.Margin);
-
             MouseService.SetInitialCursor(initial.Value.Shared.InitialCoords);
-            var staThread = new Thread(initial.Value.Shared.CurrentClipboard.SetClipboardContent);
+
+            var staThread = new Thread(() =>
+            {
+                try
+                {
+                    initial.Value.Shared.CurrentClipboard.SetClipboardContent();
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error setting clipboard in server: {ex.Message}");
+                }
+            });
+            
             staThread.SetApartmentState(ApartmentState.STA);
             staThread.Start();
             staThread.Join();
             _isConnected = true;
             return;
         }
+        
     }
 
     private void ProcessReceivedData(string jsonString)
@@ -157,7 +169,7 @@ public class NetworkService
         {
             if (!_isConnected)
             {
-                // Moved to ProcessInitialData
+                Console.WriteLine("Initial data is still looking in here"); // Moved to ProcessInitialData
                 return;
             }
             string jsonArray = "[" + jsonString.Replace("}{", "},{") + "]";
@@ -220,10 +232,8 @@ public class NetworkService
         try
         {
             Point p = _displayArgs.StartingPoint();
-            SharedInitialData sid = new()
-            {
-                InitialCoords = p
-            };
+            SharedInitialData sid = new() { InitialCoords = p };
+
             var staThread = new Thread(() =>
             {
                 try
@@ -239,25 +249,37 @@ public class NetworkService
             staThread.Start();
             staThread.Join();
 
+            //ClipboardHelper.AnalyzeSharedInitialDataSize(sid);    // Causes out of memory exception
             byte[] messageSent = MessagePackSerializer.Serialize(sid);
             byte[] compressedData = ClipboardHelper.Compress(messageSent);
             byte[] dataLength = BitConverter.GetBytes(compressedData.Length);
             _currentClient.Send(dataLength);
             _currentClient.Send(compressedData);
-            //byte[] messageSent = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(sid)); // Changed to SharedInitialData
-            //int byteSent = _currentClient.Send(messageSent);
-        }
-        catch (ArgumentNullException ane)
-        {
-            Console.WriteLine("ArgumentNullException : {0}", ane.ToString());
-        }
-        catch (SocketException se)
-        {
-            Console.WriteLine("SocketException : {0}", se.ToString());
+
+            byte[] ackLengthBuffer = new byte[4];
+            int bytesReceived = _currentClient.Receive(ackLengthBuffer, SocketFlags.None); // Wait for ack
+
+            if (bytesReceived == 4)
+            {
+                int ackLength = BitConverter.ToInt32(ackLengthBuffer, 0);
+                byte[] ackBuffer = new byte[ackLength];
+            
+                int totalReceived = 0;
+                while (totalReceived < ackLength)
+                {
+                    int received = _currentClient.Receive(ackBuffer, totalReceived, ackLength - totalReceived, SocketFlags.None);
+                    if (received == 0) break;
+                    totalReceived += received;
+                }
+            }
+            else
+            {
+                Console.WriteLine("Failed to receive acknowledgment length");
+            }
         }
         catch (Exception ex)
         {
-            Console.WriteLine("Unexpected exception : {0}", ex.ToString());
+            Console.WriteLine($"Error in SendTermination: {ex.Message}");
         }
     }
 
