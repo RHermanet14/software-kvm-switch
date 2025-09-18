@@ -4,6 +4,7 @@ using System.Net.Sockets;
 using System.Text;
 using System.Text.Json;
 using Shared;
+using MessagePack;
 namespace services
 {
     public class NetworkService
@@ -26,16 +27,21 @@ namespace services
                 clientSocket = new Socket(ipAddr.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
                 clientSocket.Connect(remoteEndPoint);
                 var m = new InitialMouseData(!(Dir)d.edge, d.margin, d.StartingPoint());
-                m.Shared.CurrentClipboard.GetClipboardContent();    // Populate CurrentClipboard
-                byte[] messageSent = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(m));
-                int byteSent = clientSocket.Send(messageSent);
+                m.Shared.CurrentClipboard.GetClipboardContent();    // Populate CurrentClipboard and optimize
+
+                //ClipboardHelper.AnalyzeMessagePackSize(m); // Debugging
+
+                byte[] messageSent = MessagePackSerializer.Serialize(m);
+                byte[] compressedData = ClipboardHelper.Compress(messageSent);
+                byte[] dataLength = BitConverter.GetBytes(compressedData.Length);
+                clientSocket.Send(dataLength);
+                clientSocket.Send(compressedData);
                 isConnected = true;
-                Console.WriteLine($"Length of Json string: {JsonSerializer.Serialize(m).Length}");
-                Console.WriteLine($"Length of byte stream: {Encoding.UTF8.GetBytes(JsonSerializer.Serialize(m)).Length}");
                 return true;
             }
-            catch
+            catch (Exception ex)
             {
+                Console.WriteLine($"{ex.Message}");
                 Console.WriteLine("Could not establish connection with server.");
                 clientSocket?.Close();
                 isConnected = false;
@@ -53,7 +59,7 @@ namespace services
             {
                 //nothing for now
             }
-            
+
             clientSocket?.Close();
         }
         public void SendCoords(MouseMovementEventArgs e)
@@ -86,12 +92,15 @@ namespace services
         private bool IsConnectionHealthy()
         {
             if (!isConnected || clientSocket == null)
+            {
+                Console.WriteLine($"not connected: {!isConnected}, clientSocketnull?: {clientSocket == null}");
                 return false;
+            }
             try
             {
                 if (clientSocket.Poll(0, SelectMode.SelectError))
                     return false;
-            
+
                 if (clientSocket.Poll(0, SelectMode.SelectRead))
                 {
                     if (clientSocket.Available == 0)
@@ -101,8 +110,9 @@ namespace services
                 }
                 return clientSocket.Connected;
             }
-            catch
+            catch (Exception ex)
             {
+                Console.WriteLine($"An exception was thrown: {ex.Message}");
                 return false;
             }
         }
@@ -135,32 +145,54 @@ namespace services
         public async Task<bool> ReceiveTermination()
         {
             if (clientSocket == null || !clientSocket.Connected || !isConnected) return false;
-            byte[] buffer = new byte[1024];
-            StringBuilder sb = new();
+
             try
             {
-                int bytesRead = await clientSocket.ReceiveAsync(new ArraySegment<byte>(buffer), SocketFlags.None);
-                if (bytesRead == 0)
-                    return false;
-                sb.Append(Encoding.UTF8.GetString(buffer, 0, bytesRead));
-                string jsonString = sb.ToString();
-                if (string.IsNullOrEmpty(jsonString))
-                    return false;
-                var p = JsonSerializer.Deserialize<SharedInitialData>(jsonString); // Changed to SharedInitialData
-                if (p != null)
+                byte[] lengthBuffer = new byte[4];
+                int bytesRead = 0;
+                while (bytesRead < 4)
                 {
-                    DisplayEvent.SetCursor(p.InitialCoords);
+                    int read = await clientSocket.ReceiveAsync(
+                        new ArraySegment<byte>(
+                            lengthBuffer, bytesRead, 4 - bytesRead
+                        ), SocketFlags.None
+                    );
+                    if (read == 0) return false;
+                    bytesRead += read;
+                }
+                int compressedLength = BitConverter.ToInt32(lengthBuffer, 0);
+                byte[] compressedBuffer = new byte[compressedLength];
+                bytesRead = 0;
+                while (bytesRead < compressedLength)
+                {
+                    int read = await clientSocket.ReceiveAsync(
+                        new ArraySegment<byte>(compressedBuffer, bytesRead, compressedLength - bytesRead),
+                        SocketFlags.None);
+                    if (read == 0) return false;
+                    bytesRead += read;
+                }
+                byte[] decompressedData = ClipboardHelper.Decompress(compressedBuffer);
+                var data = MessagePackSerializer.Deserialize<SharedInitialData>(decompressedData);
+                if (data != null)
+                {
+                    DisplayEvent.SetCursor(data.InitialCoords);
                     var staThread = new Thread(() =>
                     {
-                        p.CurrentClipboard.SetClipboardContent();
+                        try
+                        {
+                            data.CurrentClipboard.SetClipboardContent();
+
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine($"Error setting clipboard in client: {ex.Message}");
+                        }
                     });
                     staThread.SetApartmentState(ApartmentState.STA);
                     staThread.Start();
                     staThread.Join();
                 }
-                    
                 Console.WriteLine("Termination signal received. Stopping service...");
-                return true;
             }
             catch (SocketException ex)
             {
@@ -173,7 +205,25 @@ namespace services
                 Console.WriteLine($"Error: {ex.Message}");
                 return false;
             }
+            SendAcknowledgment(); //Send acknowledgement to close server
+            return true;
+        }
+
+        private void SendAcknowledgment()
+        {
+            try
+            {
+                var ackMessage = new { status = "ok", message = "termination_received" };
+                byte[] ackData = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(ackMessage));
+                byte[] lengthPrefix = BitConverter.GetBytes(ackData.Length);
+
+                clientSocket?.Send(lengthPrefix);
+                clientSocket?.Send(ackData);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Failed to send acknowledgment: {ex.Message}");
+            }
         }
     }
-    
 }

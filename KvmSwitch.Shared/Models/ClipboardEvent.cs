@@ -1,20 +1,158 @@
+using System.ComponentModel.DataAnnotations;
+using System.IO.Compression;
+using MessagePack;
+
 namespace Shared
 {
+    [MessagePackObject]
     public class ClipboardData
     {
+        [MessagePack.Key(0)]
         public string Format { get; set; } = "";
+        [MessagePack.Key(1)]
         public string DataType { get; set; } = "";
+        [MessagePack.Key(2)]
         public string TextData { get; set; } = "";
+        [MessagePack.Key(3)]
         public byte[] BinaryData { get; set; } = [];
     }
 
+    public class ClipboardHelper
+    {
+        public static byte[] Compress(byte[] data)
+        {
+            using var compressedStream = new MemoryStream();
+            using (var gzipStream = new GZipStream(compressedStream, CompressionMode.Compress))
+            {
+                gzipStream.Write(data, 0, data.Length);
+            }
+            return compressedStream.ToArray();
+        }
+
+        public static byte[] Decompress(byte[] compressedData)
+        {
+            using var compressedStream = new MemoryStream(compressedData);
+            using var gzipStream = new GZipStream(compressedStream, CompressionMode.Decompress);
+            using var decompressedStream = new MemoryStream();
+            gzipStream.CopyTo(decompressedStream);
+            return decompressedStream.ToArray();
+        }
+
+        public static void AnalyzeSharedInitialDataSize(SharedInitialData data)
+        {
+            Console.WriteLine($"Clipboard elements count: {data.CurrentClipboard.ClipboardElements.Count}");
+
+            foreach (var element in data.CurrentClipboard.ClipboardElements)
+            {
+                Console.WriteLine($"Format: {element.Format}, DataType: {element.DataType}");
+                if (element.DataType == "text")
+                {
+                    Console.WriteLine($"  Text length: {element.TextData?.Length ?? 0}");
+                }
+                else
+                {
+                    Console.WriteLine($"  Binary length: {element.BinaryData?.Length ?? 0}");
+                }
+            }
+
+            // Test MessagePack size before compression
+            byte[] msgPackOnly = MessagePackSerializer.Serialize(data);
+            Console.WriteLine($"MessagePack before compression: {msgPackOnly.Length} bytes");
+
+            // Test compression ratio
+            byte[] compressed = Compress(msgPackOnly);
+            Console.WriteLine($"After compression: {compressed.Length} bytes");
+            Console.WriteLine($"Compression ratio: {(1.0 - (double)compressed.Length / msgPackOnly.Length) * 100:F1}%");
+        }
+        public static void AnalyzeMessagePackSize(InitialMouseData data)
+        {
+            Console.WriteLine($"Clipboard elements count: {data.Shared.CurrentClipboard.ClipboardElements.Count}");
+
+            foreach (var element in data.Shared.CurrentClipboard.ClipboardElements)
+            {
+                Console.WriteLine($"Format: {element.Format}, DataType: {element.DataType}");
+                if (element.DataType == "text")
+                {
+                    Console.WriteLine($"  Text length: {element.TextData?.Length ?? 0}");
+                }
+                else
+                {
+                    Console.WriteLine($"  Binary length: {element.BinaryData?.Length ?? 0}");
+                }
+            }
+
+            // Test MessagePack size before compression
+            byte[] msgPackOnly = MessagePackSerializer.Serialize(data);
+            Console.WriteLine($"MessagePack before compression: {msgPackOnly.Length} bytes");
+
+            // Test compression ratio
+            byte[] compressed = Compress(msgPackOnly);
+            Console.WriteLine($"After compression: {compressed.Length} bytes");
+            Console.WriteLine($"Compression ratio: {(1.0 - (double)compressed.Length / msgPackOnly.Length) * 100:F1}%");
+        }
+    }
+
+    [MessagePackObject]
     public class ClipboardEvent
     {
         public ClipboardEvent()
         {
             ClipboardElements = [];
         }
-        public List<ClipboardData> ClipboardElements { get; set; } // Make static
+        [MessagePack.Key(0)]
+        public List<ClipboardData> ClipboardElements { get; set; }
+
+        private void OptimizeClipboardData() // Make private?
+        {
+            var optimized = new List<ClipboardData>();
+        
+            var textElements = ClipboardElements
+                .Where(x => x.DataType == "text")
+                .GroupBy(x => x.TextData)  // Group by actual content
+                .Select(g => g.OrderBy(x => GetTextFormatPriority(x.Format)).First()) // Keep best format
+                .ToList();
+            optimized.AddRange(textElements);
+        
+            // For images, keep only the most efficient format
+            var imageElements = ClipboardElements
+                .Where(x => x.DataType == "binary")
+                .ToList();
+        
+            if (imageElements.Count != 0)
+            {
+                var bestImage = imageElements
+                    .OrderBy(x => GetImageFormatPriority(x.Format))
+                    .ThenBy(x => x.BinaryData.Length)
+                    .First();
+            
+                optimized.Add(bestImage);
+            }
+            ClipboardElements = optimized;
+        }
+
+        private static int GetImageFormatPriority(string format)
+        {
+            return format.ToLower() switch
+            {
+                "png" => 1,                           // Best compression
+                "format17" => 2,                      // Unknown format
+                "system.drawing.bitmap" => 3,         // .NET format
+                "bitmap" => 4,                        // Standard bitmap
+                "deviceindependentbitmap" => 5,       // Usually largest
+                _ => 6
+            };
+        }
+    
+        private static int GetTextFormatPriority(string format)
+        {
+            return format switch
+            {
+                "UnicodeText" => 1,     // Preferred text format
+                "Text" => 2,
+                "System.String" => 3,
+                _ => 4
+            };
+        }
 
         private void AddTextElement(string formatType, string data)
         {
@@ -114,6 +252,7 @@ namespace Shared
                 Console.WriteLine($"Error: {ex.Message}");
                 return;
             }
+            OptimizeClipboardData();
             return;
         }
 

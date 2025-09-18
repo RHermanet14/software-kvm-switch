@@ -8,6 +8,7 @@ using services;
 using System.Runtime.InteropServices;
 using Shared;
 using System.Windows.Forms;
+using MessagePack;
 
 public class NetworkService
 {
@@ -64,25 +65,60 @@ public class NetworkService
         try
         {
             if (!_currentClient.Poll(0, SelectMode.SelectRead)) return true;
-            int bytesRead = await _currentClient.ReceiveAsync(new ArraySegment<byte>(buffer), SocketFlags.None);
-            if (bytesRead == 0)
+            if (!_isConnected) // Initial data needs to be handled differently because clipboard can be very large
             {
-                Console.WriteLine("Coordinate client disconnected");
-                CloseCurrentClient();
-                return false;
-            }
-            sb.Append(Encoding.UTF8.GetString(buffer, 0, bytesRead));
+                byte[] lengthBuffer = new byte[4];
+                int bytesRead = 0;
+                while (bytesRead < 4)
+                {
+                    int read = await _currentClient.ReceiveAsync(
+                        new ArraySegment<byte>(
+                            lengthBuffer, bytesRead, 4 - bytesRead
+                        ), SocketFlags.None
+                    );
+                    if (read == 0) return false;
+                    bytesRead += read;
+                }
+                int compressedLength = BitConverter.ToInt32(lengthBuffer, 0);
 
-            while (_currentClient.Available > 0) // Continue reading if more data is available
+                byte[] compressedBuffer = new byte[compressedLength];
+                bytesRead = 0;
+                while (bytesRead < compressedLength)
+                {
+                    int read = await _currentClient.ReceiveAsync(
+                        new ArraySegment<byte>(compressedBuffer, bytesRead, compressedLength - bytesRead),
+                        SocketFlags.None);
+                    if (read == 0) return false;
+                    bytesRead += read;
+                }
+                byte[] decompressedData = ClipboardHelper.Decompress(compressedBuffer);
+                var data = MessagePackSerializer.Deserialize<InitialMouseData>(decompressedData);
+
+                ProcessInitialData(data);
+            }
+            else // If its just coordinates
             {
-                bytesRead = await _currentClient.ReceiveAsync(new ArraySegment<byte>(buffer), SocketFlags.None);
+                int bytesRead = await _currentClient.ReceiveAsync(new ArraySegment<byte>(buffer), SocketFlags.None);
+                if (bytesRead == 0)
+                {
+                    Console.WriteLine("Coordinate client disconnected");
+                    CloseCurrentClient();
+                    return false;
+                }
                 sb.Append(Encoding.UTF8.GetString(buffer, 0, bytesRead));
+
+                while (_currentClient.Available > 0) // Continue reading if more data is available
+                {
+                    bytesRead = await _currentClient.ReceiveAsync(new ArraySegment<byte>(buffer), SocketFlags.None);
+                    sb.Append(Encoding.UTF8.GetString(buffer, 0, bytesRead));
+                }
+                string jsonString = sb.ToString();
+                if (!string.IsNullOrEmpty(jsonString))
+                {
+                    ProcessReceivedData(jsonString);
+                }
             }
-            string jsonString = sb.ToString();
-            if (!string.IsNullOrEmpty(jsonString))
-            {
-                ProcessReceivedData(jsonString);
-            }
+            
             return true;
         }
         catch (SocketException ex)
@@ -98,28 +134,43 @@ public class NetworkService
         }
     }
 
+    private void ProcessInitialData(InitialMouseData? initial)
+    {
+        if (_isConnected) return;
+        if (initial != null)
+        {
+            _displayArgs = new(initial.Value.Direction, initial.Value.Margin);
+            MouseService.SetInitialCursor(initial.Value.Shared.InitialCoords);
+
+            var staThread = new Thread(() =>
+            {
+                try
+                {
+                    initial.Value.Shared.CurrentClipboard.SetClipboardContent();
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error setting clipboard in server: {ex.Message}");
+                }
+            });
+            
+            staThread.SetApartmentState(ApartmentState.STA);
+            staThread.Start();
+            staThread.Join();
+            _isConnected = true;
+            return;
+        }
+        
+    }
+
     private void ProcessReceivedData(string jsonString)
     {
         try
         {
             if (!_isConnected)
             {
-                InitialMouseData? initial = JsonSerializer.Deserialize<InitialMouseData>(jsonString);
-                if (initial != null)
-                {
-                    _displayArgs = new(initial.Value.Direction, initial.Value.Margin);
-
-                    MouseService.SetInitialCursor(initial.Value.Shared.InitialCoords);
-                    var staThread = new Thread(() =>
-                    {
-                        initial.Value.Shared.CurrentClipboard.SetClipboardContent();
-                    });
-                    staThread.SetApartmentState(ApartmentState.STA);
-                    staThread.Start();
-                    staThread.Join();
-                    _isConnected = true;
-                    return;
-                }
+                Console.WriteLine("Initial data is still looking in here"); // Moved to ProcessInitialData
+                return;
             }
             string jsonArray = "[" + jsonString.Replace("}{", "},{") + "]";
             var jsonObjects = JsonSerializer.Deserialize<JsonElement[]>(jsonArray);
@@ -181,10 +232,8 @@ public class NetworkService
         try
         {
             Point p = _displayArgs.StartingPoint();
-            SharedInitialData sid = new()
-            {
-                InitialCoords = p
-            };
+            SharedInitialData sid = new() { InitialCoords = p };
+
             var staThread = new Thread(() =>
             {
                 try
@@ -200,20 +249,37 @@ public class NetworkService
             staThread.Start();
             staThread.Join();
 
-            byte[] messageSent = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(sid)); // Changed to SharedInitialData
-            int byteSent = _currentClient.Send(messageSent);
-        }
-        catch (ArgumentNullException ane)
-        {
-            Console.WriteLine("ArgumentNullException : {0}", ane.ToString());
-        }
-        catch (SocketException se)
-        {
-            Console.WriteLine("SocketException : {0}", se.ToString());
+            //ClipboardHelper.AnalyzeSharedInitialDataSize(sid);    // Causes out of memory exception
+            byte[] messageSent = MessagePackSerializer.Serialize(sid);
+            byte[] compressedData = ClipboardHelper.Compress(messageSent);
+            byte[] dataLength = BitConverter.GetBytes(compressedData.Length);
+            _currentClient.Send(dataLength);
+            _currentClient.Send(compressedData);
+
+            byte[] ackLengthBuffer = new byte[4];
+            int bytesReceived = _currentClient.Receive(ackLengthBuffer, SocketFlags.None); // Wait for ack
+
+            if (bytesReceived == 4)
+            {
+                int ackLength = BitConverter.ToInt32(ackLengthBuffer, 0);
+                byte[] ackBuffer = new byte[ackLength];
+            
+                int totalReceived = 0;
+                while (totalReceived < ackLength)
+                {
+                    int received = _currentClient.Receive(ackBuffer, totalReceived, ackLength - totalReceived, SocketFlags.None);
+                    if (received == 0) break;
+                    totalReceived += received;
+                }
+            }
+            else
+            {
+                Console.WriteLine("Failed to receive acknowledgment length");
+            }
         }
         catch (Exception ex)
         {
-            Console.WriteLine("Unexpected exception : {0}", ex.ToString());
+            Console.WriteLine($"Error in SendTermination: {ex.Message}");
         }
     }
 
