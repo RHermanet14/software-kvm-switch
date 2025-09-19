@@ -47,7 +47,12 @@ namespace Server
             Console.CancelKeyPress += OnCancelKeyPress;
             var (width, height) = DisplayEvent.GetScreenDimensions();
             l = new Listening(port);
-            var inputTask = Task.Run(MonitorTermination);
+            var inputThread = new Thread(() => MonitorTermination().Wait())
+            {
+                IsBackground = false,
+                Name = "ConsoleMonitor"
+            };
+            inputThread.Start();
 
             while (_isRunning)
             {
@@ -98,6 +103,7 @@ namespace Server
                     string? input = Console.ReadLine();
                     if (input?.Trim().ToLower() == "exit")
                     {
+                        Console.WriteLine("typed exit");
                         _isRunning = false;
                         StopServer();
                         break;
