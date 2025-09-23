@@ -18,7 +18,6 @@
       "MessagePack/3.1.4": {
         "dependencies": {
           "MessagePack.Annotations": "3.1.4",
-          "MessagePackAnalyzer": "3.1.4",
           "Microsoft.NET.StringTools": "17.11.4"
         },
         "runtime": {
@@ -36,7 +35,6 @@
           }
         }
       },
-      "MessagePackAnalyzer/3.1.4": {},
       "Microsoft.NET.StringTools/17.11.4": {
         "runtime": {
           "lib/net8.0/Microsoft.NET.StringTools.dll": {
@@ -77,13 +75,6 @@
       "sha512": "sha512-aVWrDAkCdqxwQsz/q0ldPh2EFn48M99YUzE9OvZjMq2RNLKz4o2z88iGFvSvbMqOWRweRvKPHBJZe22PRqzslQ==",
       "path": "messagepack.annotations/3.1.4",
       "hashPath": "messagepack.annotations.3.1.4.nupkg.sha512"
-    },
-    "MessagePackAnalyzer/3.1.4": {
-      "type": "package",
-      "serviceable": true,
-      "sha512": "sha512-CTaSsN/liJ7MhLCAB7Z4ZLBNuVGCq9lt2BT/cbrc9vzGv89yK3CqIA+z9T19a11eQYl9etZHL6MQJgCqECRVpg==",
-      "path": "messagepackanalyzer/3.1.4",
-      "hashPath": "messagepackanalyzer.3.1.4.nupkg.sha512"
     },
     "Microsoft.NET.StringTools/17.11.4": {
       "type": "package",

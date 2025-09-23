@@ -112,6 +112,7 @@ namespace ServerUI
         private void SaveButton_Click(object sender, EventArgs e)
         {
             KvmSwitch.ServerUI.Properties.Settings.Default.Port = PortTextBox.Text;
+            KvmSwitch.ServerUI.Properties.Settings.Default.Save();
             MessageBox.Show("Preference Was Saved.");
         }
 
